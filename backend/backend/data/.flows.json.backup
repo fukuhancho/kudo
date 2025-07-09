@@ -49,13 +49,6 @@
         "info": "大会出場選手を管理するためのAPIフロー"
     },
     {
-        "id": "match_flow",
-        "type": "tab",
-        "label": "Match Management API",
-        "disabled": false,
-        "info": "試合情報を管理するためのAPIフロー"
-    },
-    {
         "id": "new_flow_tab_id",
         "type": "tab",
         "label": "Tournament Bracket API",
@@ -69,31 +62,6 @@
         "disabled": false,
         "info": "",
         "env": []
-    },
-    {
-        "id": "9a7fc5edbbe4d7c9",
-        "type": "postgreSQLConfig",
-        "name": "",
-        "host": "database",
-        "hostFieldType": "str",
-        "port": 5432,
-        "portFieldType": "num",
-        "database": "KUDO10",
-        "databaseFieldType": "str",
-        "ssl": "false",
-        "sslFieldType": "bool",
-        "applicationName": "",
-        "applicationNameType": "str",
-        "max": 10,
-        "maxFieldType": "num",
-        "idle": 1000,
-        "idleFieldType": "num",
-        "connectionTimeout": 10000,
-        "connectionTimeoutFieldType": "num",
-        "user": "postgres",
-        "userFieldType": "str",
-        "password": "postgres",
-        "passwordFieldType": "str"
     },
     {
         "id": "aab57a20387da7cf",
@@ -143,7 +111,7 @@
         "z": "a9b8c7d6e5f4g3h2i1j0",
         "name": "Select All Branches",
         "query": "SELECT branch_id, branch_nm, branch_nm2, created FROM public.branch_m ORDER BY branch_id",
-        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "postgreSQLConfig": "aab57a20387da7cf",
         "split": false,
         "rowsPerMsg": "",
         "outputs": 1,
@@ -214,7 +182,7 @@
         "z": "a9b8c7d6e5f4g3h2i1j0",
         "name": "Insert Branch",
         "query": "",
-        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "postgreSQLConfig": "aab57a20387da7cf",
         "split": false,
         "rowsPerMsg": "",
         "outputs": 1,
@@ -292,7 +260,7 @@
         "z": "a9b8c7d6e5f4g3h2i1j0",
         "name": "Update Branch",
         "query": "",
-        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "postgreSQLConfig": "aab57a20387da7cf",
         "split": false,
         "rowsPerMsg": "",
         "outputs": 1,
@@ -370,7 +338,7 @@
         "z": "a9b8c7d6e5f4g3h2i1j0",
         "name": "Delete Branch",
         "query": "",
-        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "postgreSQLConfig": "aab57a20387da7cf",
         "split": false,
         "rowsPerMsg": "",
         "outputs": 1,
@@ -2425,306 +2393,6 @@
         "wires": []
     },
     {
-        "id": "m001",
-        "type": "http in",
-        "z": "match_flow",
-        "name": "GET /matches",
-        "url": "/matches",
-        "method": "get",
-        "upload": false,
-        "swaggerDoc": "",
-        "x": 100,
-        "y": 100,
-        "wires": [
-            [
-                "m002"
-            ]
-        ]
-    },
-    {
-        "id": "m002",
-        "type": "function",
-        "z": "match_flow",
-        "name": "Prepare Select All Query",
-        "func": "const tournamentId = msg.req.query.tournament_id;\nconst categoryId = msg.req.query.category_id;\nconst matchType = msg.req.query.match_type;\n\nlet whereClause = 'WHERE 1=1';\n\nif (tournamentId) {\n    whereClause += ` AND m.tournament_id = '${tournamentId}'`;\n}\nif (categoryId) {\n    whereClause += ` AND m.category_id = '${categoryId}'`;\n}\nif (matchType) {\n    whereClause += ` AND m.match_type = '${matchType}'`;\n}\n\n// match_m (m) と関連テーブルを結合して詳細情報を取得\nmsg.query = `\n    SELECT\n        m.match_id,\n        m.tournament_id,\n        tm.tournament_nm,\n        m.category_id,\n        cm.category_nm,\n        m.match_type,\n        m.match_number,\n        m.round_number,\n        m.group_name,\n        m.player1_id,\n        m.player1_branch_id,\n        pm1.familyname AS player1_familyname,\n        pm1.firstname AS player1_firstname,\n        bm1.branch_nm AS player1_branch_nm,\n        pm1.xclass AS player1_xclass, -- ★追加: player1_xclass を選択\n        m.player2_id,\n        m.player2_branch_id,\n        pm2.familyname AS player2_familyname,\n        pm2.firstname AS player2_firstname,\n        bm2.branch_nm AS player2_branch_nm,\n        pm2.xclass AS player2_xclass, -- ★追加: player2_xclass を選択\n        m.winner_player_id,\n        m.winner_branch_id,\n        m.match_date,\n        m.match_time,\n        m.venue_id,\n        vm.venue_nm,\n        m.coat_number,\n        m.score_details,\n        m.match_status,\n        m.remarks,\n        m.created_at,\n        m.updated_at\n    FROM\n        public.match_m m\n    JOIN\n        public.tournament_m tm ON m.tournament_id = tm.tournament_id\n    JOIN\n        public.category_m cm ON m.category_id = cm.category_id\n    JOIN\n        public.player_m pm1 ON m.player1_id = pm1.player_id AND m.player1_branch_id = pm1.branch_id\n    LEFT JOIN\n        public.player_m pm2 ON m.player2_id = pm2.player_id AND m.player2_branch_id = pm2.branch_id\n    LEFT JOIN\n        public.branch_m bm1 ON pm1.branch_id = bm1.branch_id\n    LEFT JOIN\n        public.branch_m bm2 ON pm2.branch_id = bm2.branch_id\n    LEFT JOIN\n        public.venue_m vm ON m.venue_id = vm.venue_id\n    ${whereClause}\n    ORDER BY\n        m.tournament_id, m.category_id, m.round_number, m.match_number;\n`;\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 350,
-        "y": 100,
-        "wires": [
-            [
-                "m003"
-            ]
-        ]
-    },
-    {
-        "id": "m003",
-        "type": "postgresql",
-        "z": "match_flow",
-        "name": "Select Matches",
-        "query": "",
-        "postgreSQLConfig": "aab57a20387da7cf",
-        "split": false,
-        "rowsPerMsg": "",
-        "outputs": 1,
-        "x": 600,
-        "y": 100,
-        "wires": [
-            [
-                "m999"
-            ]
-        ]
-    },
-    {
-        "id": "m004",
-        "type": "http in",
-        "z": "match_flow",
-        "name": "POST /matches",
-        "url": "/matches",
-        "method": "post",
-        "upload": false,
-        "swaggerDoc": "",
-        "x": 100,
-        "y": 200,
-        "wires": [
-            [
-                "m005"
-            ]
-        ]
-    },
-    {
-        "id": "m005",
-        "type": "function",
-        "z": "match_flow",
-        "name": "Prepare Insert Query",
-        "func": "const { match_id, tournament_id, category_id, match_type, match_number, round_number, group_name, player1_id, player1_branch_id, player2_id, player2_branch_id, match_date, match_time, venue_id, coat_number, score_details, match_status, remarks } = msg.payload;\n\n// UUID v4を生成するヘルパー関数\nfunction generateUuidV4() {\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {\n    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);\n    return v.toString(16);\n  });\n}\n\n// match_idが提供されていない場合は生成\nconst newMatchId = match_id || generateUuidV4();\n\nif (!newMatchId || !tournament_id || !category_id || !match_type || match_number === undefined || !player1_id || !player1_branch_id) {\n    node.warn(\"Missing required fields for insert.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"match_id, tournament_id, category_id, match_type, match_number, player1_id, player1_branch_id are required.\" };\n    return [null, msg];\n}\n\n// Nullable fields\nconst roundNumberVal = round_number !== undefined && round_number !== null ? round_number : 'NULL';\nconst groupNameVal = group_name ? `'${group_name}'` : 'NULL';\nconst player2IdVal = player2_id ? `'${player2_id}'` : 'NULL';\nconst player2BranchIdVal = player2_branch_id ? `'${player2_branch_id}'` : 'NULL';\nconst matchDateVal = match_date ? `'${match_date}'` : 'NULL';\nconst matchTimeVal = match_time ? `'${match_time}'` : 'NULL';\nconst venueIdVal = venue_id ? `'${venue_id}'` : 'NULL';\nconst coatNumberVal = coat_number !== undefined && coat_number !== null ? coat_number : 'NULL';\nconst scoreDetailsVal = score_details ? `'${score_details}'` : 'NULL';\nconst matchStatusVal = match_status ? `'${match_status}'` : `'scheduled'`;\nconst remarksVal = remarks ? `'${remarks}'` : 'NULL';\n\nmsg.query = `INSERT INTO public.match_m (\n    match_id, tournament_id, category_id, match_type, match_number, round_number, group_name,\n    player1_id, player1_branch_id, player2_id, player2_branch_id,\n    match_date, match_time, venue_id, coat_number, score_details, match_status, remarks\n) VALUES (\n    '${newMatchId}', '${tournament_id}', '${category_id}', '${match_type}', ${match_number}, ${roundNumberVal}, ${groupNameVal},\n    '${player1_id}', '${player1_branch_id}', ${player2IdVal}, ${player2BranchIdVal},\n    ${matchDateVal}, ${matchTimeVal}, ${venueIdVal}, ${coatNumberVal}, ${scoreDetailsVal}, ${matchStatusVal}, ${remarksVal}\n)`;\n\nmsg.payload = { match_id: newMatchId }; // レスポンスで生成されたIDを返す\nreturn [msg, null];",
-        "outputs": 2,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 350,
-        "y": 200,
-        "wires": [
-            [
-                "m006"
-            ],
-            [
-                "m999"
-            ]
-        ]
-    },
-    {
-        "id": "m006",
-        "type": "postgresql",
-        "z": "match_flow",
-        "name": "Insert Match",
-        "query": "",
-        "postgreSQLConfig": "aab57a20387da7cf",
-        "split": false,
-        "rowsPerMsg": "",
-        "outputs": 1,
-        "x": 600,
-        "y": 200,
-        "wires": [
-            [
-                "m007"
-            ]
-        ]
-    },
-    {
-        "id": "m007",
-        "type": "function",
-        "z": "match_flow",
-        "name": "Set Success Response",
-        "func": "msg.statusCode = 201;\nmsg.payload = { message: \"Match created successfully.\" };\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 850,
-        "y": 200,
-        "wires": [
-            [
-                "m999"
-            ]
-        ]
-    },
-    {
-        "id": "m008",
-        "type": "http in",
-        "z": "match_flow",
-        "name": "PUT /matches/:match_id",
-        "url": "/matches/:match_id",
-        "method": "put",
-        "upload": false,
-        "swaggerDoc": "",
-        "x": 100,
-        "y": 300,
-        "wires": [
-            [
-                "m009"
-            ]
-        ]
-    },
-    {
-        "id": "m009",
-        "type": "function",
-        "z": "match_flow",
-        "name": "Prepare Update Query",
-        "func": "const { match_id } = msg.req.params;\nconst { tournament_id, category_id, match_type, match_number, round_number, group_name, player1_id, player1_branch_id, player2_id, player2_branch_id, winner_player_id, winner_branch_id, match_date, match_time, venue_id, coat_number, score_details, match_status, remarks } = msg.payload;\n\nlet updateFields = [];\n\n// 必須フィールドは更新対象から除外するか、別途バリデーション\n// ここでは、更新可能なフィールドのみを対象とする\nif (tournament_id !== undefined) updateFields.push(`tournament_id = '${tournament_id}'`);\nif (category_id !== undefined) updateFields.push(`category_id = '${category_id}'`);\nif (match_type !== undefined) updateFields.push(`match_type = '${match_type}'`);\nif (match_number !== undefined) updateFields.push(`match_number = ${match_number}`);\nif (round_number !== undefined) updateFields.push(`round_number = ${round_number !== null ? round_number : 'NULL'}`);\nif (group_name !== undefined) updateFields.push(`group_name = ${group_name ? `'${group_name}'` : 'NULL'}`);\nif (player1_id !== undefined) updateFields.push(`player1_id = '${player1_id}'`);\nif (player1_branch_id !== undefined) updateFields.push(`player1_branch_id = '${player1_branch_id}'`);\nif (player2_id !== undefined) updateFields.push(`player2_id = ${player2_id ? `'${player2_id}'` : 'NULL'}`);\nif (player2_branch_id !== undefined) updateFields.push(`player2_branch_id = ${player2_branch_id ? `'${player2_branch_id}'` : 'NULL'}`);\nif (winner_player_id !== undefined) updateFields.push(`winner_player_id = ${winner_player_id ? `'${winner_player_id}'` : 'NULL'}`);\nif (winner_branch_id !== undefined) updateFields.push(`winner_branch_id = ${winner_branch_id ? `'${winner_branch_id}'` : 'NULL'}`);\nif (match_date !== undefined) updateFields.push(`match_date = ${match_date ? `'${match_date}'` : 'NULL'}`);\nif (match_time !== undefined) updateFields.push(`match_time = ${match_time ? `'${match_time}'` : 'NULL'}`);\nif (venue_id !== undefined) updateFields.push(`venue_id = ${venue_id ? `'${venue_id}'` : 'NULL'}`);\nif (coat_number !== undefined) updateFields.push(`coat_number = ${coat_number !== null ? coat_number : 'NULL'}`);\nif (score_details !== undefined) updateFields.push(`score_details = ${score_details ? `'${score_details}'` : 'NULL'}`);\nif (match_status !== undefined) updateFields.push(`match_status = '${match_status}'`);\nif (remarks !== undefined) updateFields.push(`remarks = ${remarks ? `'${remarks}'` : 'NULL'}`);\n\nif (updateFields.length === 0) {\n    node.warn(\"No fields to update.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"No fields provided for update.\" };\n    return [null, msg];\n}\n\nmsg.query = `UPDATE public.match_m SET ${updateFields.join(', ')} WHERE match_id = '${match_id}'`;\nreturn [msg, null];",
-        "outputs": 2,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 350,
-        "y": 300,
-        "wires": [
-            [
-                "m010"
-            ],
-            []
-        ]
-    },
-    {
-        "id": "m010",
-        "type": "postgresql",
-        "z": "match_flow",
-        "name": "Update Match",
-        "query": "",
-        "postgreSQLConfig": "aab57a20387da7cf",
-        "split": false,
-        "rowsPerMsg": "",
-        "outputs": 1,
-        "x": 600,
-        "y": 300,
-        "wires": [
-            [
-                "m011"
-            ]
-        ]
-    },
-    {
-        "id": "m011",
-        "type": "function",
-        "z": "match_flow",
-        "name": "Set Update Response",
-        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Match not found.\" };\n} else {\n    msg.statusCode = 200;\n    msg.payload = { message: \"Match updated successfully.\" };\n}\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 850,
-        "y": 300,
-        "wires": [
-            [
-                "m999"
-            ]
-        ]
-    },
-    {
-        "id": "m012",
-        "type": "http in",
-        "z": "match_flow",
-        "name": "DELETE /matches/:match_id",
-        "url": "/matches/:match_id",
-        "method": "delete",
-        "upload": false,
-        "swaggerDoc": "",
-        "x": 100,
-        "y": 400,
-        "wires": [
-            [
-                "m013"
-            ]
-        ]
-    },
-    {
-        "id": "m013",
-        "type": "function",
-        "z": "match_flow",
-        "name": "Prepare Delete Query",
-        "func": "const { match_id } = msg.req.params;\nif (!match_id) {\n    node.warn(\"Missing match_id for delete.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"match_id is required.\" };\n    return [null, msg];\n}\nmsg.query = `DELETE FROM public.match_m WHERE match_id = '${match_id}'`;\nreturn [msg, null];",
-        "outputs": 2,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 350,
-        "y": 400,
-        "wires": [
-            [
-                "m014"
-            ],
-            [
-                "m999"
-            ]
-        ]
-    },
-    {
-        "id": "m014",
-        "type": "postgresql",
-        "z": "match_flow",
-        "name": "Delete Match",
-        "query": "",
-        "postgreSQLConfig": "aab57a20387da7cf",
-        "split": false,
-        "rowsPerMsg": "",
-        "outputs": 1,
-        "x": 600,
-        "y": 400,
-        "wires": [
-            [
-                "m015"
-            ]
-        ]
-    },
-    {
-        "id": "m015",
-        "type": "function",
-        "z": "match_flow",
-        "name": "Set Delete Response",
-        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Match not found.\" };\n} else {\n    msg.statusCode = 204; // No Content for successful delete\n    msg.payload = {};\n}\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 850,
-        "y": 400,
-        "wires": [
-            [
-                "m999"
-            ]
-        ]
-    },
-    {
-        "id": "m999",
-        "type": "http response",
-        "z": "match_flow",
-        "name": "Send Response",
-        "statusCode": "200",
-        "headers": {
-            "Content-Type": "application/json"
-        },
-        "x": 1100,
-        "y": 100,
-        "wires": []
-    },
-    {
         "id": "a1b2c3d4e5f6g7h8",
         "type": "http in",
         "z": "new_flow_tab_id",
@@ -2737,7 +2405,8 @@
         "y": 80,
         "wires": [
             [
-                "i9j0k1l2m3n4o5p6"
+                "i9j0k1l2m3n4o5p6",
+                "697604f06577b013"
             ]
         ]
     },
@@ -2767,7 +2436,7 @@
         "z": "new_flow_tab_id",
         "name": "PostgreSQL (Save)",
         "query": "",
-        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "postgreSQLConfig": "aab57a20387da7cf",
         "split": false,
         "rowsPerMsg": "",
         "outputs": 2,
@@ -2891,7 +2560,7 @@
         "z": "new_flow_tab_id",
         "name": "PostgreSQL (Load)",
         "query": "",
-        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "postgreSQLConfig": "aab57a20387da7cf",
         "split": false,
         "rowsPerMsg": "",
         "outputs": 2,
@@ -2973,6 +2642,22 @@
         "wires": []
     },
     {
+        "id": "697604f06577b013",
+        "type": "debug",
+        "z": "new_flow_tab_id",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 220,
+        "y": 140,
+        "wires": []
+    },
+    {
         "id": "league_save_http_in",
         "type": "http in",
         "z": "456322a74f8670b8",
@@ -3015,7 +2700,7 @@
         "z": "456322a74f8670b8",
         "name": "PostgreSQL (League Save)",
         "query": "",
-        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "postgreSQLConfig": "aab57a20387da7cf",
         "split": false,
         "rowsPerMsg": "",
         "outputs": 2,
@@ -3139,7 +2824,7 @@
         "z": "456322a74f8670b8",
         "name": "PostgreSQL (League Load)",
         "query": "",
-        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "postgreSQLConfig": "aab57a20387da7cf",
         "split": false,
         "rowsPerMsg": "",
         "outputs": 2,

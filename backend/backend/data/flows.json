@@ -64,31 +64,6 @@
         "env": []
     },
     {
-        "id": "9a7fc5edbbe4d7c9",
-        "type": "postgreSQLConfig",
-        "name": "",
-        "host": "database",
-        "hostFieldType": "str",
-        "port": 5432,
-        "portFieldType": "num",
-        "database": "KUDO10",
-        "databaseFieldType": "str",
-        "ssl": "false",
-        "sslFieldType": "bool",
-        "applicationName": "",
-        "applicationNameType": "str",
-        "max": 10,
-        "maxFieldType": "num",
-        "idle": 1000,
-        "idleFieldType": "num",
-        "connectionTimeout": 10000,
-        "connectionTimeoutFieldType": "num",
-        "user": "postgres",
-        "userFieldType": "str",
-        "password": "postgres",
-        "passwordFieldType": "str"
-    },
-    {
         "id": "aab57a20387da7cf",
         "type": "postgreSQLConfig",
         "name": "",
@@ -136,7 +111,7 @@
         "z": "a9b8c7d6e5f4g3h2i1j0",
         "name": "Select All Branches",
         "query": "SELECT branch_id, branch_nm, branch_nm2, created FROM public.branch_m ORDER BY branch_id",
-        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "postgreSQLConfig": "aab57a20387da7cf",
         "split": false,
         "rowsPerMsg": "",
         "outputs": 1,
@@ -207,7 +182,7 @@
         "z": "a9b8c7d6e5f4g3h2i1j0",
         "name": "Insert Branch",
         "query": "",
-        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "postgreSQLConfig": "aab57a20387da7cf",
         "split": false,
         "rowsPerMsg": "",
         "outputs": 1,
@@ -285,7 +260,7 @@
         "z": "a9b8c7d6e5f4g3h2i1j0",
         "name": "Update Branch",
         "query": "",
-        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "postgreSQLConfig": "aab57a20387da7cf",
         "split": false,
         "rowsPerMsg": "",
         "outputs": 1,
@@ -363,7 +338,7 @@
         "z": "a9b8c7d6e5f4g3h2i1j0",
         "name": "Delete Branch",
         "query": "",
-        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "postgreSQLConfig": "aab57a20387da7cf",
         "split": false,
         "rowsPerMsg": "",
         "outputs": 1,
@@ -2430,7 +2405,8 @@
         "y": 80,
         "wires": [
             [
-                "i9j0k1l2m3n4o5p6"
+                "i9j0k1l2m3n4o5p6",
+                "697604f06577b013"
             ]
         ]
     },
@@ -2450,7 +2426,8 @@
         "y": 80,
         "wires": [
             [
-                "q7r8s9t0u1v2w3x4"
+                "q7r8s9t0u1v2w3x4",
+                "a523f49c112137d1"
             ]
         ]
     },
@@ -2460,7 +2437,7 @@
         "z": "new_flow_tab_id",
         "name": "PostgreSQL (Save)",
         "query": "",
-        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "postgreSQLConfig": "aab57a20387da7cf",
         "split": false,
         "rowsPerMsg": "",
         "outputs": 2,
@@ -2584,7 +2561,7 @@
         "z": "new_flow_tab_id",
         "name": "PostgreSQL (Load)",
         "query": "",
-        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "postgreSQLConfig": "aab57a20387da7cf",
         "split": false,
         "rowsPerMsg": "",
         "outputs": 2,
@@ -2666,6 +2643,39 @@
         "wires": []
     },
     {
+        "id": "697604f06577b013",
+        "type": "debug",
+        "z": "new_flow_tab_id",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 220,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "a523f49c112137d1",
+        "type": "debug",
+        "z": "new_flow_tab_id",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "query",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 500,
+        "y": 140,
+        "wires": []
+    },
+    {
         "id": "league_save_http_in",
         "type": "http in",
         "z": "456322a74f8670b8",
@@ -2708,7 +2718,7 @@
         "z": "456322a74f8670b8",
         "name": "PostgreSQL (League Save)",
         "query": "",
-        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "postgreSQLConfig": "aab57a20387da7cf",
         "split": false,
         "rowsPerMsg": "",
         "outputs": 2,
@@ -2832,7 +2842,7 @@
         "z": "456322a74f8670b8",
         "name": "PostgreSQL (League Load)",
         "query": "",
-        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "postgreSQLConfig": "aab57a20387da7cf",
         "split": false,
         "rowsPerMsg": "",
         "outputs": 2,

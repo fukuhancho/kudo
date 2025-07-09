@@ -265,7 +265,10 @@ export default {
 
       loadingSave.value = true;
       try {
+        const bracketId = crypto.randomUUID();
+
         const payload = {
+          bracket_id: bracketId,
           tournament_id: props.tournamentId,
           category_id: props.categoryId,
           league_data: leagueParticipantsOrder.value, // JSオブジェクトとして送信
