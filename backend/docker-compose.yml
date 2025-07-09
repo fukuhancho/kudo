@@ -1,0 +1,64 @@
+services:
+  # バックエンド (Node-RED)
+  backend:
+    build:
+      context: ./backend # backend ディレクトリの Dockerfile を参照
+      dockerfile: Dockerfile
+    container_name: node_red_server
+    ports:
+      - "1880:1880" # Node-RED のデフォルトポート
+    volumes:
+      - ./backend/data:/data # Node-RED のフローや設定を永続化
+    restart: always # コンテナが終了した場合に自動で再起動
+    environment:
+      # 必要に応じてNode-REDの設定を環境変数で渡す
+      TZ: Asia/Tokyo # タイムゾーンの設定
+    networks:
+      - app_network
+
+# データベース (PostgreSQL)
+  database:
+    image: postgres:16-alpine
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: KUDO10 
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - app_network
+
+  # データベースツール（pgAdmin4）
+  pgadmin4:
+    image: dpage/pgadmin4:latest
+    ports:
+      - 8082:80
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+      - ./config/servers.json:/pgadmin4/servers.json
+    environment:
+      PGADMIN_DEFAULT_EMAIL: user@example.com
+      PGADMIN_DEFAULT_PASSWORD: postgres
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+      PGADMIN_SERVER_JSON_FILE: /pgadmin4/servers.json
+
+    networks:
+      - app_network
+      
+    depends_on:
+      - database
+
+# Docker ボリューム定義
+volumes:
+  postgres_data:
+  pgadmin-data:
+
+# Docker ネットワーク定義
+networks:
+  app_network:
+    driver: bridge

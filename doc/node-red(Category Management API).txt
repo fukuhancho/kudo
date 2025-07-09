@@ -1,0 +1,414 @@
+[
+    {
+        "id": "658402238263a0e3",
+        "type": "tab",
+        "label": "Category Management API",
+        "disabled": false,
+        "info": "カテゴリー情報を管理するためのAPIフロー"
+    },
+    {
+        "id": "912121e4d2ef713d",
+        "type": "http in",
+        "z": "658402238263a0e3",
+        "name": "GET /categories",
+        "url": "/categories",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 100,
+        "wires": [
+            [
+                "7aa582ba6e239f0c"
+            ]
+        ]
+    },
+    {
+        "id": "7aa582ba6e239f0c",
+        "type": "function",
+        "z": "658402238263a0e3",
+        "name": "Prepare Select All Query",
+        "func": "msg.query = `SELECT category_id, category_nm, age_min, age_max, physical_index_min, physical_index_max, sex_rule, remarks, created FROM public.category_m ORDER BY category_id`;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 100,
+        "wires": [
+            [
+                "a2c9d60a71f92ac5"
+            ]
+        ]
+    },
+    {
+        "id": "a2c9d60a71f92ac5",
+        "type": "postgresql",
+        "z": "658402238263a0e3",
+        "name": "Select All Categories",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 100,
+        "wires": [
+            [
+                "6c2561d7a09553cf"
+            ]
+        ]
+    },
+    {
+        "id": "cf9477a549db2601",
+        "type": "http in",
+        "z": "658402238263a0e3",
+        "name": "POST /categories",
+        "url": "/categories",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 200,
+        "wires": [
+            [
+                "c9632c9daa369758"
+            ]
+        ]
+    },
+    {
+        "id": "c9632c9daa369758",
+        "type": "function",
+        "z": "658402238263a0e3",
+        "name": "Prepare Insert Query",
+        "func": "// 文字列値をSQLクエリに安全に埋め込むためのヘルパー関数\nfunction formatSqlString(value) {\n    if (value === null || value === undefined) {\n        return 'NULL';\n    }\n    const strValue = String(value);\n    if (strValue === '') {\n        return \"''\";\n    }\n    const escapedValue = strValue.replace(/'/g, \"''\");\n    return `'${escapedValue}'`;\n}\n\nconst { category_id, category_nm, age_min, age_max, physical_index_min, physical_index_max, sex_rule, remarks } = msg.payload;\n\nif (!category_id || !category_nm || !sex_rule) {\n    node.warn(\"Missing required fields for insert.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"category_id, category_nm, sex_rule are required.\" };\n    return [null, msg];\n}\n\nconst ageMinVal = age_min !== null ? age_min : 'NULL';\nconst ageMaxVal = age_max !== null ? age_max : 'NULL';\nconst physicalIndexMinVal = physical_index_min !== null ? physical_index_min : 'NULL';\nconst physicalIndexMaxVal = physical_index_max !== null ? physical_index_max : 'NULL';\n\nmsg.query = `INSERT INTO public.category_m (\n    category_id, category_nm, age_min, age_max, \n    physical_index_min, physical_index_max, sex_rule, remarks\n) VALUES (\n    '${category_id}', ${formatSqlString(category_nm)}, ${ageMinVal}, ${ageMaxVal}, \n    ${physicalIndexMinVal}, ${physicalIndexMaxVal}, ${formatSqlString(sex_rule)}, ${formatSqlString(remarks)}\n)`;\n\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 200,
+        "wires": [
+            [
+                "39ead171ef515368"
+            ],
+            [
+                "6c2561d7a09553cf"
+            ]
+        ]
+    },
+    {
+        "id": "39ead171ef515368",
+        "type": "postgresql",
+        "z": "658402238263a0e3",
+        "name": "Insert Category",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 200,
+        "wires": [
+            [
+                "ff03f5a07d128b0d"
+            ]
+        ]
+    },
+    {
+        "id": "ff03f5a07d128b0d",
+        "type": "function",
+        "z": "658402238263a0e3",
+        "name": "Set Success Response",
+        "func": "msg.statusCode = 201;\nmsg.payload = { message: \"Category created successfully.\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 200,
+        "wires": [
+            [
+                "6c2561d7a09553cf"
+            ]
+        ]
+    },
+    {
+        "id": "32bf65b8666e554a",
+        "type": "http in",
+        "z": "658402238263a0e3",
+        "name": "PUT /categories/:category_id",
+        "url": "/categories/:category_id",
+        "method": "put",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 300,
+        "wires": [
+            [
+                "fae33dc45135590f"
+            ]
+        ]
+    },
+    {
+        "id": "fae33dc45135590f",
+        "type": "function",
+        "z": "658402238263a0e3",
+        "name": "Prepare Update Query",
+        "func": "// 文字列値をSQLクエリに安全に埋め込むためのヘルパー関数\nfunction formatSqlString(value) {\n    if (value === null || value === undefined) {\n        return 'NULL';\n    }\n    const strValue = String(value);\n    if (strValue === '') {\n        return \"''\";\n    }\n    const escapedValue = strValue.replace(/'/g, \"''\");\n    return `'${escapedValue}'`;\n}\n\nconst categoryId = msg.req.params.category_id;\nconst { category_nm, age_min, age_max, physical_index_min, physical_index_max, sex_rule, remarks } = msg.payload;\n\nlet updateFields = [];\n\nif (category_nm !== undefined) updateFields.push(`category_nm = ${formatSqlString(category_nm)}`);\nif (age_min !== undefined) updateFields.push(`age_min = ${age_min !== null ? age_min : 'NULL'}`);\nif (age_max !== undefined) updateFields.push(`age_max = ${age_max !== null ? age_max : 'NULL'}`);\nif (physical_index_min !== undefined) updateFields.push(`physical_index_min = ${physical_index_min !== null ? physical_index_min : 'NULL'}`);\nif (physical_index_max !== undefined) updateFields.push(`physical_index_max = ${physical_index_max !== null ? physical_index_max : 'NULL'}`);\nif (sex_rule !== undefined) updateFields.push(`sex_rule = ${formatSqlString(sex_rule)}`);\nif (remarks !== undefined) updateFields.push(`remarks = ${formatSqlString(remarks)}`);\n\nif (updateFields.length === 0) {\n    node.warn(\"No fields to update.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"No fields provided for update.\" };\n    return [null, msg];\n}\n\nmsg.query = `UPDATE public.category_m SET ${updateFields.join(', ')} WHERE category_id = '${categoryId}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 300,
+        "wires": [
+            [
+                "3ab3decd86f4243b"
+            ],
+            [
+                "6c2561d7a09553cf"
+            ]
+        ]
+    },
+    {
+        "id": "3ab3decd86f4243b",
+        "type": "postgresql",
+        "z": "658402238263a0e3",
+        "name": "Update Category",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 300,
+        "wires": [
+            [
+                "523a7eda51dcf957"
+            ]
+        ]
+    },
+    {
+        "id": "523a7eda51dcf957",
+        "type": "function",
+        "z": "658402238263a0e3",
+        "name": "Set Update Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Category not found.\" };\n} else {\n    msg.statusCode = 200;\n    msg.payload = { message: \"Category updated successfully.\" };\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 300,
+        "wires": [
+            [
+                "6c2561d7a09553cf"
+            ]
+        ]
+    },
+    {
+        "id": "7243345b4429d56d",
+        "type": "http in",
+        "z": "658402238263a0e3",
+        "name": "DELETE /categories/:category_id",
+        "url": "/categories/:category_id",
+        "method": "delete",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 400,
+        "wires": [
+            [
+                "85c65ba34487fa7b"
+            ]
+        ]
+    },
+    {
+        "id": "85c65ba34487fa7b",
+        "type": "function",
+        "z": "658402238263a0e3",
+        "name": "Prepare Delete Query",
+        "func": "const categoryId = msg.req.params.category_id;\nif (!categoryId) {\n    node.warn(\"Missing category_id for delete.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"category_id is required.\" };\n    return [null, msg];\n}\nmsg.query = `DELETE FROM public.category_m WHERE category_id = '${categoryId}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 400,
+        "wires": [
+            [
+                "203d98dad98c65fb"
+            ],
+            [
+                "6c2561d7a09553cf"
+            ]
+        ]
+    },
+    {
+        "id": "203d98dad98c65fb",
+        "type": "postgresql",
+        "z": "658402238263a0e3",
+        "name": "Delete Category",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 400,
+        "wires": [
+            [
+                "134b73786eaefdde"
+            ]
+        ]
+    },
+    {
+        "id": "134b73786eaefdde",
+        "type": "function",
+        "z": "658402238263a0e3",
+        "name": "Set Delete Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Category not found.\" };\n} else {\n    msg.statusCode = 204; // No Content for successful delete\n    msg.payload = {};\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 400,
+        "wires": [
+            [
+                "6c2561d7a09553cf"
+            ]
+        ]
+    },
+    {
+        "id": "a21ff3eea443ba2e",
+        "type": "http in",
+        "z": "658402238263a0e3",
+        "name": "GET /categories/:category_id",
+        "url": "/categories/:category_id",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 500,
+        "wires": [
+            [
+                "54d4dd6fdec115c8"
+            ]
+        ]
+    },
+    {
+        "id": "54d4dd6fdec115c8",
+        "type": "function",
+        "z": "658402238263a0e3",
+        "name": "Prepare Select By ID Query",
+        "func": "const categoryId = msg.req.params.category_id;\nif (!categoryId) {\n    msg.statusCode = 400;\n    msg.payload = { error: \"Category ID is required.\" };\n    return [null, msg];\n}\nmsg.query = `SELECT category_id, category_nm, age_min, age_max, physical_index_min, physical_index_max, sex_rule, remarks, created FROM public.category_m WHERE category_id = '${categoryId}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 500,
+        "wires": [
+            [
+                "ff67f504a0a4f7bd"
+            ],
+            [
+                "6c2561d7a09553cf"
+            ]
+        ]
+    },
+    {
+        "id": "ff67f504a0a4f7bd",
+        "type": "postgresql",
+        "z": "658402238263a0e3",
+        "name": "Select Category By ID",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 500,
+        "wires": [
+            [
+                "6540940189c9e024"
+            ]
+        ]
+    },
+    {
+        "id": "6540940189c9e024",
+        "type": "function",
+        "z": "658402238263a0e3",
+        "name": "Set Response",
+        "func": "if (msg.payload.length === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Category not found.\" };\n} else {\n    msg.statusCode = 200;\n    msg.payload = msg.payload[0];\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 500,
+        "wires": [
+            [
+                "6c2561d7a09553cf"
+            ]
+        ]
+    },
+    {
+        "id": "6c2561d7a09553cf",
+        "type": "http response",
+        "z": "658402238263a0e3",
+        "name": "Send Response",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1100,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "aab57a20387da7cf",
+        "type": "postgreSQLConfig",
+        "name": "",
+        "host": "database",
+        "hostFieldType": "str",
+        "port": 5432,
+        "portFieldType": "num",
+        "database": "KUDO10",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": 10,
+        "maxFieldType": "num",
+        "idle": 1000,
+        "idleFieldType": "num",
+        "connectionTimeout": 10000,
+        "connectionTimeoutFieldType": "num",
+        "user": "postgres",
+        "userFieldType": "str",
+        "password": "postgres",
+        "passwordFieldType": "str"
+    }
+]

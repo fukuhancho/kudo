@@ -1,0 +1,25 @@
+services:
+  # フロントエンド (Vue.js/Vuetify)
+  frontend:
+    build:
+      context: ./frontend # frontend ディレクトリの Dockerfile を参照
+      dockerfile: Dockerfile
+    container_name: vue_app_dev
+    ports:
+      - "8081:8080" # Vue CLI の開発サーバーのポート
+    volumes:
+      - ./frontend:/app # ホストの frontend ディレクトリをコンテナの /app にマウント
+      - /app/node_modules # node_modules はコンテナ内に保持 (ホストに生成されないように)
+    # 開発時にコンテナを起動したままにするためのコマンド
+    # Vue CLI の開発サーバーは手動で起動することを想定
+    command: sh -c "npm install && tail -F /dev/null"
+    environment:
+      # Node.jsのバージョンに合わせて調整
+      NODE_OPTIONS: --max-old-space-size=4096 # メモリ不足エラー対策 (必要であれば)
+    networks:
+      - app_network
+
+# Docker ネットワーク定義
+networks:
+  app_network:
+    driver: bridge

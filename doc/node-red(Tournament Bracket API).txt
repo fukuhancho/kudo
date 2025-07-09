@@ -1,0 +1,282 @@
+[
+    {
+        "id": "new_flow_tab_id",
+        "type": "tab",
+        "label": "Tournament Bracket API",
+        "disabled": false,
+        "info": "Vue.jsからトーナメント組み合わせデータを保存および読み込むためのAPIフロー"
+    },
+    {
+        "id": "a1b2c3d4e5f6g7h8",
+        "type": "http in",
+        "z": "new_flow_tab_id",
+        "name": "Save Bracket",
+        "url": "/save-bracket",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 70,
+        "y": 80,
+        "wires": [
+            [
+                "i9j0k1l2m3n4o5p6"
+            ]
+        ]
+    },
+    {
+        "id": "i9j0k1l2m3n4o5p6",
+        "type": "function",
+        "z": "new_flow_tab_id",
+        "name": "Prepare SQL Query (UPSERT)",
+        "func": "const payload = msg.payload;\nconst {bracket_id, tournament_id, category_id, bracket_data, final_winner_data} = msg.payload;\n\n// SQLインジェクションの脆弱性があるため、入力値のサニタイズを強く推奨します。\n// 特に、bracket_data と final_winner_data はJSON文字列として直接挿入されるため、\n// これらの内容が信頼できるソースからのものであることを確認してください。\n\n// ON CONFLICT (tournament_id, category_id) DO UPDATE を使用し、\n// 該当する組み合わせが存在すれば更新、なければ新規挿入します。\n// bracket_id はPRIMARY KEYなので、INSERT時のみ適用されます。\nmsg.query = `INSERT INTO tournament_brackets (\n    bracket_id,\n    tournament_id,\n    category_id,\n    bracket_data,\n    final_winner_data\n) VALUES (\n    '${bracket_id}', '${tournament_id}', '${category_id}', '${bracket_data}', '${final_winner_data}'\n)\nON CONFLICT (tournament_id, category_id) DO UPDATE SET\n    bracket_data = EXCLUDED.bracket_data,\n    final_winner_data = EXCLUDED.final_winner_data,\n    updated_at = NOW();`;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 290,
+        "y": 80,
+        "wires": [
+            [
+                "q7r8s9t0u1v2w3x4"
+            ]
+        ]
+    },
+    {
+        "id": "q7r8s9t0u1v2w3x4",
+        "type": "postgresql",
+        "z": "new_flow_tab_id",
+        "name": "PostgreSQL (Save)",
+        "query": "",
+        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 2,
+        "x": 530,
+        "y": 80,
+        "wires": [
+            [
+                "set_success_response_save"
+            ],
+            [
+                "error_handler_save_function"
+            ]
+        ]
+    },
+    {
+        "id": "set_success_response_save",
+        "type": "function",
+        "z": "new_flow_tab_id",
+        "name": "Set Success Response",
+        "func": "msg.statusCode = 200;\nmsg.payload = { success: true, message: \"トーナメント組み合わせを保存しました！\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 770,
+        "y": 60,
+        "wires": [
+            [
+                "http_response_save_success"
+            ]
+        ]
+    },
+    {
+        "id": "error_handler_save_function",
+        "type": "function",
+        "z": "new_flow_tab_id",
+        "name": "Set Error Response (Save)",
+        "func": "msg.statusCode = 500;\nmsg.payload = {\n    success: false,\n    message: \"保存中にデータベースエラーが発生しました。\",\n    error: msg.error ? msg.error.message : '不明なエラー'\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 780,
+        "y": 100,
+        "wires": [
+            [
+                "http_response_save_error"
+            ]
+        ]
+    },
+    {
+        "id": "http_response_save_success",
+        "type": "http response",
+        "z": "new_flow_tab_id",
+        "name": "HTTP Response (Save Success)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1080,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "http_response_save_error",
+        "type": "http response",
+        "z": "new_flow_tab_id",
+        "name": "HTTP Response (Save Error)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1060,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "load_http_in",
+        "type": "http in",
+        "z": "new_flow_tab_id",
+        "name": "Load Bracket",
+        "url": "/load-bracket/:tournament_id/:category_id",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 70,
+        "y": 200,
+        "wires": [
+            [
+                "load_prepare_sql"
+            ]
+        ]
+    },
+    {
+        "id": "load_prepare_sql",
+        "type": "function",
+        "z": "new_flow_tab_id",
+        "name": "Prepare Load SQL Query",
+        "func": "const tournamentId = msg.req.params.tournament_id;\nconst categoryId = msg.req.params.category_id;\n\n// tournament_idとcategory_idに基づいて最新の組み合わせを取得\n// unique_tournament_category制約があるため、ORDER BYは必須ではないが、\n// 念のためupdated_atでソートして最新のものを取得するロジックにしておく。\nmsg.query = `SELECT bracket_data, final_winner_data FROM tournament_brackets\n             WHERE tournament_id = '${tournamentId}' AND category_id = '${categoryId}'\n             ORDER BY updated_at DESC LIMIT 1;`;\n\n// msg.payload はPostgreSQLノードでパラメータとして使用されないため、ここでは設定しません。\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 270,
+        "y": 200,
+        "wires": [
+            [
+                "load_postgresql"
+            ]
+        ]
+    },
+    {
+        "id": "load_postgresql",
+        "type": "postgresql",
+        "z": "new_flow_tab_id",
+        "name": "PostgreSQL (Load)",
+        "query": "",
+        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 2,
+        "x": 490,
+        "y": 200,
+        "wires": [
+            [
+                "load_format_response"
+            ],
+            [
+                "error_handler_load_function"
+            ]
+        ]
+    },
+    {
+        "id": "load_format_response",
+        "type": "function",
+        "z": "new_flow_tab_id",
+        "name": "Format Load Response",
+        "func": "if (msg.payload && msg.payload.length > 0) {\n    // データベースから取得したJSONBデータは、Node-REDでは既にJavaScriptオブジェクトとしてパースされているはずです。\n    // しかし、Vue.jsに渡すために再度JSON文字列に変換します。\n    msg.payload = {\n        success: true,\n        bracket_data: JSON.stringify(msg.payload[0].bracket_data),\n        final_winner_data: msg.payload[0].final_winner_data ? JSON.stringify(msg.payload[0].final_winner_data) : null\n    };\n} else {\n    // データが見つからなかった場合\n    msg.statusCode = 404; // Not Found\n    msg.payload = {\n        success: false,\n        message: \"指定された大会とカテゴリーの組み合わせは見つかりませんでした。\"\n    };\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 730,
+        "y": 180,
+        "wires": [
+            [
+                "http_response_load_success"
+            ]
+        ]
+    },
+    {
+        "id": "error_handler_load_function",
+        "type": "function",
+        "z": "new_flow_tab_id",
+        "name": "Set Error Response (Load)",
+        "func": "msg.statusCode = 500;\nmsg.payload = {\n    success: false,\n    message: \"読み込み中にデータベースエラーが発生しました。\",\n    error: msg.error ? msg.error.message : '不明なエラー'\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 740,
+        "y": 220,
+        "wires": [
+            [
+                "http_response_load_error"
+            ]
+        ]
+    },
+    {
+        "id": "http_response_load_success",
+        "type": "http response",
+        "z": "new_flow_tab_id",
+        "name": "HTTP Response (Load Success)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1020,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "http_response_load_error",
+        "type": "http response",
+        "z": "new_flow_tab_id",
+        "name": "HTTP Response (Load Error)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1000,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "9a7fc5edbbe4d7c9",
+        "type": "postgreSQLConfig",
+        "name": "",
+        "host": "database",
+        "hostFieldType": "str",
+        "port": 5432,
+        "portFieldType": "num",
+        "database": "KUDO10",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": 10,
+        "maxFieldType": "num",
+        "idle": 1000,
+        "idleFieldType": "num",
+        "connectionTimeout": 10000,
+        "connectionTimeoutFieldType": "num",
+        "user": "postgres",
+        "userFieldType": "str",
+        "password": "postgres",
+        "passwordFieldType": "str"
+    }
+]

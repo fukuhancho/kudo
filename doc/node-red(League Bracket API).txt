@@ -1,0 +1,283 @@
+[
+    {
+        "id": "456322a74f8670b8",
+        "type": "tab",
+        "label": "League Bracket API",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "league_save_http_in",
+        "type": "http in",
+        "z": "456322a74f8670b8",
+        "name": "Save League Bracket",
+        "url": "/save-league-bracket",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 80,
+        "wires": [
+            [
+                "league_prepare_sql_upsert"
+            ]
+        ]
+    },
+    {
+        "id": "league_prepare_sql_upsert",
+        "type": "function",
+        "z": "456322a74f8670b8",
+        "name": "Prepare League SQL Query (UPSERT)",
+        "func": "const { tournament_id, category_id, league_data, match_results_data, standings_data } = msg.payload;\n\n// 注意: SQLインジェクションの脆弱性があるため、本番環境では必ずプリペアドステートメントを使用してください。\n// Node-REDのPostgreSQLノードがパラメータ化クエリをサポートしている場合は、そちらを使用することを強く推奨します。\n// 特にJSONBデータは、不正な文字列が含まれるとクエリが破損したり、セキュリティリスクにつながる可能性があります。\n\n// JSONBフィールドは、PostgreSQLに渡す前にJSON文字列に変換します。\nconst leagueDataJson = JSON.stringify(league_data);\nconst matchResultsDataJson = JSON.stringify(match_results_data);\nconst standingsDataJson = JSON.stringify(standings_data);\n\nmsg.query = `INSERT INTO public.league_brackets (\n    tournament_id,\n    category_id,\n    league_data,\n    match_results_data,\n    standings_data\n) VALUES (\n    '${tournament_id}', '${category_id}', '${leagueDataJson}'::jsonb, '${matchResultsDataJson}'::jsonb, '${standingsDataJson}'::jsonb\n)\nON CONFLICT (tournament_id, category_id) DO UPDATE SET\n    league_data = EXCLUDED.league_data,\n    match_results_data = EXCLUDED.match_results_data,\n    standings_data = EXCLUDED.standings_data,\n    updated_at = NOW();`;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 80,
+        "wires": [
+            [
+                "league_postgresql_save"
+            ]
+        ]
+    },
+    {
+        "id": "league_postgresql_save",
+        "type": "postgresql",
+        "z": "456322a74f8670b8",
+        "name": "PostgreSQL (League Save)",
+        "query": "",
+        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 2,
+        "x": 700,
+        "y": 80,
+        "wires": [
+            [
+                "league_set_success_response_save"
+            ],
+            [
+                "league_error_handler_save_function"
+            ]
+        ]
+    },
+    {
+        "id": "league_set_success_response_save",
+        "type": "function",
+        "z": "456322a74f8670b8",
+        "name": "Set Success Response",
+        "func": "msg.statusCode = 200;\nmsg.payload = { success: true, message: \"リーグ戦データを保存しました！\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 970,
+        "y": 60,
+        "wires": [
+            [
+                "league_http_response_save_success"
+            ]
+        ]
+    },
+    {
+        "id": "league_error_handler_save_function",
+        "type": "function",
+        "z": "456322a74f8670b8",
+        "name": "Set Error Response (Save)",
+        "func": "msg.statusCode = 500;\nmsg.payload = {\n    success: false,\n    message: \"リーグ戦データの保存中にデータベースエラーが発生しました。\",\n    error: msg.error ? msg.error.message : '不明なエラー'\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 980,
+        "y": 100,
+        "wires": [
+            [
+                "league_http_response_save_error"
+            ]
+        ]
+    },
+    {
+        "id": "league_http_response_save_success",
+        "type": "http response",
+        "z": "456322a74f8670b8",
+        "name": "HTTP Response (Save Success)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1280,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "league_http_response_save_error",
+        "type": "http response",
+        "z": "456322a74f8670b8",
+        "name": "HTTP Response (Save Error)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1260,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "league_load_http_in",
+        "type": "http in",
+        "z": "456322a74f8670b8",
+        "name": "Load League Bracket",
+        "url": "/load-league-bracket/:tournament_id/:category_id",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 240,
+        "wires": [
+            [
+                "league_prepare_sql_load"
+            ]
+        ]
+    },
+    {
+        "id": "league_prepare_sql_load",
+        "type": "function",
+        "z": "456322a74f8670b8",
+        "name": "Prepare League Load SQL Query",
+        "func": "const tournamentId = msg.req.params.tournament_id;\nconst categoryId = msg.req.params.category_id;\n\n// tournament_idとcategory_idに基づいて最新のリーグ戦データを取得\nmsg.query = `SELECT league_data, match_results_data, standings_data FROM public.league_brackets\n             WHERE tournament_id = '${tournamentId}' AND category_id = '${categoryId}'\n             ORDER BY updated_at DESC LIMIT 1;`;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 240,
+        "wires": [
+            [
+                "league_postgresql_load"
+            ]
+        ]
+    },
+    {
+        "id": "league_postgresql_load",
+        "type": "postgresql",
+        "z": "456322a74f8670b8",
+        "name": "PostgreSQL (League Load)",
+        "query": "",
+        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 2,
+        "x": 660,
+        "y": 240,
+        "wires": [
+            [
+                "league_format_load_response"
+            ],
+            [
+                "league_error_handler_load_function"
+            ]
+        ]
+    },
+    {
+        "id": "league_format_load_response",
+        "type": "function",
+        "z": "456322a74f8670b8",
+        "name": "Format League Load Response",
+        "func": "if (msg.payload && msg.payload.length > 0) {\n    // データベースから取得したJSONBデータは、Node-REDでは既にJavaScriptオブジェクトとしてパースされているはずです。\n    // しかし、Vue.jsに渡すために再度JSON文字列に変換します。\n    const data = msg.payload[0];\n    msg.payload = {\n        success: true,\n        league_data: JSON.stringify(data.league_data),\n        match_results_data: data.match_results_data ? JSON.stringify(data.match_results_data) : null,\n        standings_data: data.standings_data ? JSON.stringify(data.standings_data) : null\n    };\n} else {\n    // データが見つからなかった場合\n    msg.statusCode = 404; // Not Found\n    msg.payload = {\n        success: false,\n        message: \"指定された大会とカテゴリーのリーグ戦データは見つかりませんでした。\"\n    };\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 950,
+        "y": 220,
+        "wires": [
+            [
+                "league_http_response_load_success"
+            ]
+        ]
+    },
+    {
+        "id": "league_error_handler_load_function",
+        "type": "function",
+        "z": "456322a74f8670b8",
+        "name": "Set Error Response (Load)",
+        "func": "msg.statusCode = 500;\nmsg.payload = {\n    success: false,\n    message: \"リーグ戦データの読み込み中にデータベースエラーが発生しました。\",\n    error: msg.error ? msg.error.message : '不明なエラー'\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 940,
+        "y": 260,
+        "wires": [
+            [
+                "league_http_response_load_error"
+            ]
+        ]
+    },
+    {
+        "id": "league_http_response_load_success",
+        "type": "http response",
+        "z": "456322a74f8670b8",
+        "name": "HTTP Response (Load Success)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1260,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "league_http_response_load_error",
+        "type": "http response",
+        "z": "456322a74f8670b8",
+        "name": "HTTP Response (Load Error)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1240,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "9a7fc5edbbe4d7c9",
+        "type": "postgreSQLConfig",
+        "name": "",
+        "host": "database",
+        "hostFieldType": "str",
+        "port": 5432,
+        "portFieldType": "num",
+        "database": "KUDO10",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": 10,
+        "maxFieldType": "num",
+        "idle": 1000,
+        "idleFieldType": "num",
+        "connectionTimeout": 10000,
+        "connectionTimeoutFieldType": "num",
+        "user": "postgres",
+        "userFieldType": "str",
+        "password": "postgres",
+        "passwordFieldType": "str"
+    }
+]

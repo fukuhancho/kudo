@@ -1,0 +1,414 @@
+[
+    {
+        "id": "9d8a9a504f2add4b",
+        "type": "tab",
+        "label": "Tournament Participant API",
+        "disabled": false,
+        "info": "大会出場選手を管理するためのAPIフロー"
+    },
+    {
+        "id": "0b12eae387542859",
+        "type": "http in",
+        "z": "9d8a9a504f2add4b",
+        "name": "GET /tournament-participants",
+        "url": "/tournament-participants",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 100,
+        "wires": [
+            [
+                "dd2092f956a59f15"
+            ]
+        ]
+    },
+    {
+        "id": "dd2092f956a59f15",
+        "type": "function",
+        "z": "9d8a9a504f2add4b",
+        "name": "Prepare Select All Query",
+        "func": "const tournamentId = msg.req.query.tournament_id;\nconst categoryId = msg.req.query.category_id;\nlet whereClause = 'WHERE 1=1';\n\nif (tournamentId) {\n    whereClause += ` AND tp.tournament_id = '${tournamentId}'`;\n}\nif (categoryId) {\n    whereClause += ` AND tp.category_id = '${categoryId}'`;\n}\n\nmsg.query = `\n    SELECT\n        tp.tournament_id,\n        tm.tournament_nm,\n        tp.player_id,\n        tp.branch_id,\n        bm.branch_nm,\n        pm.familyname,\n        pm.firstname,\n        pm.familyname2,\n        pm.firstname2,\n        pm.sex AS player_sex,\n        pm.birthday AS player_birthday,\n        pm.admissionday,\n        pm.xclass,\n        pm.height AS player_height,\n        pm.weight AS player_weight,\n        tp.category_id,\n        cm.category_nm,\n        tp.entry_date,\n        tp.status\n    FROM\n        public.tournament_participant tp\n    JOIN\n        public.tournament_m tm ON tp.tournament_id = tm.tournament_id\n    JOIN\n        public.category_m cm ON tp.category_id = cm.category_id\n    JOIN\n        public.player_m pm ON tp.player_id = pm.player_id AND tp.branch_id = pm.branch_id\n    JOIN\n        public.branch_m bm ON pm.branch_id = bm.branch_id\n    ${whereClause}\n    ORDER BY\n        tp.tournament_id, tp.category_id, pm.familyname, pm.firstname;\n`;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 370,
+        "y": 100,
+        "wires": [
+            [
+                "6d829a32872255b1"
+            ]
+        ]
+    },
+    {
+        "id": "6d829a32872255b1",
+        "type": "postgresql",
+        "z": "9d8a9a504f2add4b",
+        "name": "Select Tournament Participants",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 630,
+        "y": 100,
+        "wires": [
+            [
+                "43ba84aaf050dba7"
+            ]
+        ]
+    },
+    {
+        "id": "ff510ecf01a4a9b9",
+        "type": "http in",
+        "z": "9d8a9a504f2add4b",
+        "name": "POST /tournament-participants",
+        "url": "/tournament-participants",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 130,
+        "y": 200,
+        "wires": [
+            [
+                "90c41eaab97229f0"
+            ]
+        ]
+    },
+    {
+        "id": "90c41eaab97229f0",
+        "type": "function",
+        "z": "9d8a9a504f2add4b",
+        "name": "Prepare Insert Query",
+        "func": "const { tournament_id, player_id, branch_id, category_id, status } = msg.payload;\n\nif (!tournament_id || !player_id || !branch_id || !category_id || !status) {\n    node.warn(\"Missing required fields for insert.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"tournament_id, player_id, branch_id, category_id, status are required.\" };\n    return [null, msg];\n}\n\nmsg.query = `INSERT INTO public.tournament_participant (\n    tournament_id, player_id, branch_id, category_id, status\n) VALUES (\n    '${tournament_id}', '${player_id}', '${branch_id}', '${category_id}', '${status}'\n)`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 200,
+        "wires": [
+            [
+                "89d90a14249231ef"
+            ],
+            [
+                "43ba84aaf050dba7"
+            ]
+        ]
+    },
+    {
+        "id": "89d90a14249231ef",
+        "type": "postgresql",
+        "z": "9d8a9a504f2add4b",
+        "name": "Insert Tournament Participant",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 640,
+        "y": 200,
+        "wires": [
+            [
+                "9309d0f10a50537e"
+            ]
+        ]
+    },
+    {
+        "id": "9309d0f10a50537e",
+        "type": "function",
+        "z": "9d8a9a504f2add4b",
+        "name": "Set Success Response",
+        "func": "msg.statusCode = 201;\nmsg.payload = { message: \"Tournament participant created successfully.\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 890,
+        "y": 200,
+        "wires": [
+            [
+                "43ba84aaf050dba7"
+            ]
+        ]
+    },
+    {
+        "id": "e2009e9d74409d94",
+        "type": "http in",
+        "z": "9d8a9a504f2add4b",
+        "name": "PUT /tournament-participants/:tid/:pid/:bid/:cid",
+        "url": "/tournament-participants/:tid/:pid/:bid/:cid",
+        "method": "put",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 170,
+        "y": 300,
+        "wires": [
+            [
+                "5e902363227c5718"
+            ]
+        ]
+    },
+    {
+        "id": "5e902363227c5718",
+        "type": "function",
+        "z": "9d8a9a504f2add4b",
+        "name": "Prepare Update Query",
+        "func": "const { tid, pid, bid, cid } = msg.req.params;\nconst { status } = msg.payload;\n\nif (!status) {\n    node.warn(\"Missing status for update.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"Status is required for update.\" };\n    return [null, msg];\n}\n\nmsg.query = `UPDATE public.tournament_participant SET status = '${status}' WHERE tournament_id = '${tid}' AND player_id = '${pid}' AND branch_id = '${bid}' AND category_id = '${cid}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 460,
+        "y": 300,
+        "wires": [
+            [
+                "7cc419f528395dbd"
+            ],
+            [
+                "43ba84aaf050dba7"
+            ]
+        ]
+    },
+    {
+        "id": "7cc419f528395dbd",
+        "type": "postgresql",
+        "z": "9d8a9a504f2add4b",
+        "name": "Update Tournament Participant",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 730,
+        "y": 300,
+        "wires": [
+            [
+                "ad16158192d8207a"
+            ]
+        ]
+    },
+    {
+        "id": "ad16158192d8207a",
+        "type": "function",
+        "z": "9d8a9a504f2add4b",
+        "name": "Set Update Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Tournament participant not found.\" };\n} else {\n    msg.statusCode = 200;\n    msg.payload = { message: \"Tournament participant updated successfully.\" };\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 980,
+        "y": 300,
+        "wires": [
+            [
+                "43ba84aaf050dba7"
+            ]
+        ]
+    },
+    {
+        "id": "b14c175fe37bdca7",
+        "type": "http in",
+        "z": "9d8a9a504f2add4b",
+        "name": "DELETE /tournament-participants/:tid/:cid/:pid/:bid",
+        "url": "/tournament-participants/:tid/:cid/:pid/:bid",
+        "method": "delete",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 180,
+        "y": 400,
+        "wires": [
+            [
+                "067c7c34755cfa7f"
+            ]
+        ]
+    },
+    {
+        "id": "067c7c34755cfa7f",
+        "type": "function",
+        "z": "9d8a9a504f2add4b",
+        "name": "Prepare Delete Query",
+        "func": "const { tid, cid, pid, bid } = msg.req.params;\nif (!tid || !cid || !pid || !bid) {\n    node.warn(\"Missing parameters for delete.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"tournament_id, category_id, player_id, branch_id are required.\" };\n    return [null, msg];\n}\nmsg.query = `DELETE FROM public.tournament_participant WHERE tournament_id = '${tid}' AND category_id = '${cid}' AND player_id = '${pid}' AND branch_id = '${bid}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 480,
+        "y": 400,
+        "wires": [
+            [
+                "efa25da2a3fb3614"
+            ],
+            [
+                "43ba84aaf050dba7"
+            ]
+        ]
+    },
+    {
+        "id": "efa25da2a3fb3614",
+        "type": "postgresql",
+        "z": "9d8a9a504f2add4b",
+        "name": "Delete Tournament Participant",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 750,
+        "y": 400,
+        "wires": [
+            [
+                "1bf3e8723b350640"
+            ]
+        ]
+    },
+    {
+        "id": "1bf3e8723b350640",
+        "type": "function",
+        "z": "9d8a9a504f2add4b",
+        "name": "Set Delete Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Tournament participant not found.\" };\n} else {\n    msg.statusCode = 204; // No Content for successful delete\n    msg.payload = {};\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1000,
+        "y": 400,
+        "wires": [
+            [
+                "43ba84aaf050dba7"
+            ]
+        ]
+    },
+    {
+        "id": "d54a5fa3f01ca3a1",
+        "type": "http in",
+        "z": "9d8a9a504f2add4b",
+        "name": "GET /tournament-participants-detail/:tid/:cid",
+        "url": "/tournament-participants-detail/:tid/:cid",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 160,
+        "y": 500,
+        "wires": [
+            [
+                "2df5bd029f7d323d"
+            ]
+        ]
+    },
+    {
+        "id": "2df5bd029f7d323d",
+        "type": "function",
+        "z": "9d8a9a504f2add4b",
+        "name": "Prepare Select Detail Query",
+        "func": "const { tid, cid } = msg.req.params;\nif (!tid || !cid) {\n    msg.statusCode = 400;\n    msg.payload = { error: \"Tournament ID and Category ID are required.\" };\n    return [null, msg];\n}\n\nmsg.query = `\n    SELECT\n        tp.tournament_id,\n        tp.player_id,\n        tp.branch_id,\n        tp.category_id,\n        tp.entry_date,\n        tp.status,\n        pm.familyname,\n        pm.firstname,\n        pm.familyname2,\n        pm.firstname2,\n        pm.sex,\n        pm.birthday,\n        pm.admissionday,\n        pm.xclass,\n        pm.height,\n        pm.weight,\n        bm.branch_nm\n    FROM\n        public.tournament_participant tp\n    JOIN\n        public.player_m pm ON tp.player_id = pm.player_id AND tp.branch_id = pm.branch_id\n    JOIN\n        public.branch_m bm ON pm.branch_id = bm.branch_id\n    WHERE\n        tp.tournament_id = '${tid}' AND tp.category_id = '${cid}'\n    ORDER BY\n        pm.familyname, pm.firstname;\n`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 460,
+        "y": 500,
+        "wires": [
+            [
+                "8856ce140a4395de"
+            ],
+            [
+                "43ba84aaf050dba7"
+            ]
+        ]
+    },
+    {
+        "id": "8856ce140a4395de",
+        "type": "postgresql",
+        "z": "9d8a9a504f2add4b",
+        "name": "Select Detail Participants",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 730,
+        "y": 500,
+        "wires": [
+            [
+                "954b23724959d85b"
+            ]
+        ]
+    },
+    {
+        "id": "954b23724959d85b",
+        "type": "function",
+        "z": "9d8a9a504f2add4b",
+        "name": "Set Response",
+        "func": "msg.statusCode = 200;\nmsg.payload = msg.payload;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 940,
+        "y": 500,
+        "wires": [
+            [
+                "43ba84aaf050dba7"
+            ]
+        ]
+    },
+    {
+        "id": "43ba84aaf050dba7",
+        "type": "http response",
+        "z": "9d8a9a504f2add4b",
+        "name": "Send Response",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1100,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "aab57a20387da7cf",
+        "type": "postgreSQLConfig",
+        "name": "",
+        "host": "database",
+        "hostFieldType": "str",
+        "port": 5432,
+        "portFieldType": "num",
+        "database": "KUDO10",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": 10,
+        "maxFieldType": "num",
+        "idle": 1000,
+        "idleFieldType": "num",
+        "connectionTimeout": 10000,
+        "connectionTimeoutFieldType": "num",
+        "user": "postgres",
+        "userFieldType": "str",
+        "password": "postgres",
+        "passwordFieldType": "str"
+    }
+]

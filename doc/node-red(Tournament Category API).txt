@@ -1,0 +1,261 @@
+[
+    {
+        "id": "tournament_category_flow",
+        "type": "tab",
+        "label": "Tournament Category API",
+        "disabled": false,
+        "info": "大会とカテゴリーの紐付けを管理するためのAPIフロー"
+    },
+    {
+        "id": "tc001",
+        "type": "http in",
+        "z": "tournament_category_flow",
+        "name": "GET /tournament_categories/:tournament_id",
+        "url": "/tournament_categories/:tournament_id",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 170,
+        "y": 100,
+        "wires": [
+            [
+                "tc002"
+            ]
+        ]
+    },
+    {
+        "id": "tc002",
+        "type": "function",
+        "z": "tournament_category_flow",
+        "name": "Prepare Select Linked Categories Query",
+        "func": "const { tournament_id } = msg.req.params;\nif (!tournament_id) {\n    node.warn(\"Missing tournament_id for select.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"tournament_id is required.\" };\n    return [null, msg];\n}\n// tournament_category_map と category_m を結合してカテゴリー名も取得\nmsg.query = `SELECT tcm.tournament_id, tcm.category_id, cm.category_nm FROM public.tournament_category_map tcm JOIN public.category_m cm ON tcm.category_id = cm.category_id WHERE tcm.tournament_id = '${tournament_id}' ORDER BY tcm.category_id`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 520,
+        "y": 100,
+        "wires": [
+            [
+                "tc003"
+            ],
+            [
+                "tc999"
+            ]
+        ]
+    },
+    {
+        "id": "tc003",
+        "type": "postgresql",
+        "z": "tournament_category_flow",
+        "name": "Select Linked Categories",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 830,
+        "y": 100,
+        "wires": [
+            [
+                "tc999"
+            ]
+        ]
+    },
+    {
+        "id": "tc004",
+        "type": "http in",
+        "z": "tournament_category_flow",
+        "name": "POST /tournament_categories",
+        "url": "/tournament_categories",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 200,
+        "wires": [
+            [
+                "tc005"
+            ]
+        ]
+    },
+    {
+        "id": "tc005",
+        "type": "function",
+        "z": "tournament_category_flow",
+        "name": "Prepare Insert Query",
+        "func": "const { tournament_id, category_id } = msg.payload;\nif (!tournament_id || !category_id) {\n    node.warn(\"Missing required fields for insert.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"tournament_id and category_id are required.\" };\n    return [null, msg];\n}\nmsg.query = `INSERT INTO public.tournament_category_map (tournament_id, category_id) VALUES ('${tournament_id}', '${category_id}')`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 200,
+        "wires": [
+            [
+                "tc006"
+            ],
+            [
+                "tc999"
+            ]
+        ]
+    },
+    {
+        "id": "tc006",
+        "type": "postgresql",
+        "z": "tournament_category_flow",
+        "name": "Insert Tournament Category",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 620,
+        "y": 200,
+        "wires": [
+            [
+                "tc007"
+            ]
+        ]
+    },
+    {
+        "id": "tc007",
+        "type": "function",
+        "z": "tournament_category_flow",
+        "name": "Set Success Response",
+        "func": "msg.statusCode = 201;\nmsg.payload = { message: \"Tournament category added successfully.\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 870,
+        "y": 200,
+        "wires": [
+            [
+                "tc999"
+            ]
+        ]
+    },
+    {
+        "id": "tc008",
+        "type": "http in",
+        "z": "tournament_category_flow",
+        "name": "DELETE /tournament_categories/:tournament_id/:category_id",
+        "url": "/tournament_categories/:tournament_id/:category_id",
+        "method": "delete",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 220,
+        "y": 300,
+        "wires": [
+            [
+                "tc009"
+            ]
+        ]
+    },
+    {
+        "id": "tc009",
+        "type": "function",
+        "z": "tournament_category_flow",
+        "name": "Prepare Delete Query",
+        "func": "const { tournament_id, category_id } = msg.req.params;\nif (!tournament_id || !category_id) {\n    node.warn(\"Missing tournament_id or category_id for delete.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"tournament_id and category_id are required.\" };\n    return [null, msg];\n}\nmsg.query = `DELETE FROM public.tournament_category_map WHERE tournament_id = '${tournament_id}' AND category_id = '${category_id}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 300,
+        "wires": [
+            [
+                "tc010"
+            ],
+            [
+                "tc999"
+            ]
+        ]
+    },
+    {
+        "id": "tc010",
+        "type": "postgresql",
+        "z": "tournament_category_flow",
+        "name": "Delete Tournament Category",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 820,
+        "y": 300,
+        "wires": [
+            [
+                "tc011"
+            ]
+        ]
+    },
+    {
+        "id": "tc011",
+        "type": "function",
+        "z": "tournament_category_flow",
+        "name": "Set Delete Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Tournament category not found.\" };\n} else {\n    msg.statusCode = 204; // No Content for successful delete\n    msg.payload = {};\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1060,
+        "y": 300,
+        "wires": [
+            [
+                "tc999"
+            ]
+        ]
+    },
+    {
+        "id": "tc999",
+        "type": "http response",
+        "z": "tournament_category_flow",
+        "name": "Send Response",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1260,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "aab57a20387da7cf",
+        "type": "postgreSQLConfig",
+        "name": "",
+        "host": "database",
+        "hostFieldType": "str",
+        "port": 5432,
+        "portFieldType": "num",
+        "database": "KUDO10",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": 10,
+        "maxFieldType": "num",
+        "idle": 1000,
+        "idleFieldType": "num",
+        "connectionTimeout": 10000,
+        "connectionTimeoutFieldType": "num",
+        "user": "postgres",
+        "userFieldType": "str",
+        "password": "postgres",
+        "passwordFieldType": "str"
+    }
+]

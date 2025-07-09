@@ -1,0 +1,3223 @@
+[
+    {
+        "id": "a9b8c7d6e5f4g3h2i1j0",
+        "type": "tab",
+        "label": "Branch Management API",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "56ad11acd7070bcf",
+        "type": "tab",
+        "label": "Player Management API",
+        "disabled": false,
+        "info": "選手情報を管理するためのAPIフロー"
+    },
+    {
+        "id": "venue_flow",
+        "type": "tab",
+        "label": "Venue Management API",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "658402238263a0e3",
+        "type": "tab",
+        "label": "Category Management API",
+        "disabled": false,
+        "info": "カテゴリー情報を管理するためのAPIフロー"
+    },
+    {
+        "id": "tournament_flow",
+        "type": "tab",
+        "label": "Tournament Management API",
+        "disabled": false,
+        "info": "大会情報を管理するためのAPIフロー"
+    },
+    {
+        "id": "tournament_category_flow",
+        "type": "tab",
+        "label": "Tournament Category API",
+        "disabled": false,
+        "info": "大会とカテゴリーの紐付けを管理するためのAPIフロー"
+    },
+    {
+        "id": "9d8a9a504f2add4b",
+        "type": "tab",
+        "label": "Tournament Participant API",
+        "disabled": false,
+        "info": "大会出場選手を管理するためのAPIフロー"
+    },
+    {
+        "id": "match_flow",
+        "type": "tab",
+        "label": "Match Management API",
+        "disabled": false,
+        "info": "試合情報を管理するためのAPIフロー"
+    },
+    {
+        "id": "new_flow_tab_id",
+        "type": "tab",
+        "label": "Tournament Bracket API",
+        "disabled": false,
+        "info": "Vue.jsからトーナメント組み合わせデータを保存および読み込むためのAPIフロー"
+    },
+    {
+        "id": "456322a74f8670b8",
+        "type": "tab",
+        "label": "League Bracket API",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "9a7fc5edbbe4d7c9",
+        "type": "postgreSQLConfig",
+        "name": "",
+        "host": "database",
+        "hostFieldType": "str",
+        "port": 5432,
+        "portFieldType": "num",
+        "database": "KUDO10",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": 10,
+        "maxFieldType": "num",
+        "idle": 1000,
+        "idleFieldType": "num",
+        "connectionTimeout": 10000,
+        "connectionTimeoutFieldType": "num",
+        "user": "postgres",
+        "userFieldType": "str",
+        "password": "postgres",
+        "passwordFieldType": "str"
+    },
+    {
+        "id": "aab57a20387da7cf",
+        "type": "postgreSQLConfig",
+        "name": "",
+        "host": "database",
+        "hostFieldType": "str",
+        "port": 5432,
+        "portFieldType": "num",
+        "database": "KUDO10",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": 10,
+        "maxFieldType": "num",
+        "idle": 1000,
+        "idleFieldType": "num",
+        "connectionTimeout": 10000,
+        "connectionTimeoutFieldType": "num",
+        "user": "postgres",
+        "userFieldType": "str",
+        "password": "postgres",
+        "passwordFieldType": "str"
+    },
+    {
+        "id": "e0d9c8b7a6f5e4d3c2b1",
+        "type": "http in",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "GET /branches",
+        "url": "/branches",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 100,
+        "wires": [
+            [
+                "f1e2d3c4b5a6f7e8d9c0"
+            ]
+        ]
+    },
+    {
+        "id": "f1e2d3c4b5a6f7e8d9c0",
+        "type": "postgresql",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Select All Branches",
+        "query": "SELECT branch_id, branch_nm, branch_nm2, created FROM public.branch_m ORDER BY branch_id",
+        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 300,
+        "y": 100,
+        "wires": [
+            [
+                "g2h3i4j5k6l7m8n9o0p1"
+            ]
+        ]
+    },
+    {
+        "id": "g2h3i4j5k6l7m8n9o0p1",
+        "type": "http response",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Send Response",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1020,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "h3i4j5k6l7m8n9o0p1q2",
+        "type": "http in",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "POST /branches",
+        "url": "/branches",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 200,
+        "wires": [
+            [
+                "i4j5k6l7m8n9o0p1q2r3"
+            ]
+        ]
+    },
+    {
+        "id": "i4j5k6l7m8n9o0p1q2r3",
+        "type": "function",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Prepare Insert Query",
+        "func": "const { branch_id, branch_nm, branch_nm2 } = msg.payload;\nif (!branch_id || !branch_nm) {\n    node.warn(\"Missing required fields for insert.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"branch_id and branch_nm are required.\" };\n    return [null, msg];\n}\nmsg.query = `INSERT INTO public.branch_m (branch_id, branch_nm, branch_nm2) VALUES ('${branch_id}', '${branch_nm}', '${branch_nm2 || ''}')`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 200,
+        "wires": [
+            [
+                "j5k6l7m8n9o0p1q2r3s4"
+            ],
+            [
+                "g2h3i4j5k6l7m8n9o0p1"
+            ]
+        ]
+    },
+    {
+        "id": "j5k6l7m8n9o0p1q2r3s4",
+        "type": "postgresql",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Insert Branch",
+        "query": "",
+        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 570,
+        "y": 200,
+        "wires": [
+            [
+                "k6l7m8n9o0p1q2r3s4t5"
+            ]
+        ]
+    },
+    {
+        "id": "k6l7m8n9o0p1q2r3s4t5",
+        "type": "function",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Set Success Response",
+        "func": "msg.statusCode = 201;\nmsg.payload = { message: \"Branch created successfully.\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 810,
+        "y": 200,
+        "wires": [
+            [
+                "g2h3i4j5k6l7m8n9o0p1"
+            ]
+        ]
+    },
+    {
+        "id": "l7m8n9o0p1q2r3s4t5u6",
+        "type": "http in",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "PUT /branches/:branch_id",
+        "url": "/branches/:branch_id",
+        "method": "put",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 130,
+        "y": 300,
+        "wires": [
+            [
+                "m8n9o0p1q2r3s4t5u6v7"
+            ]
+        ]
+    },
+    {
+        "id": "m8n9o0p1q2r3s4t5u6v7",
+        "type": "function",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Prepare Update Query",
+        "func": "const { branch_id } = msg.req.params;\nconst { branch_nm, branch_nm2 } = msg.payload;\n\nif (!branch_nm && !branch_nm2) {\n    node.warn(\"No fields to update.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"No fields provided for update.\" };\n    return [null, msg];\n}\n\nlet updateFields = [];\nif (branch_nm !== undefined) updateFields.push(`branch_nm = '${branch_nm}'`);\nif (branch_nm2 !== undefined) updateFields.push(`branch_nm2 = '${branch_nm2}'`);\n\nif (updateFields.length === 0) {\n    node.warn(\"No valid fields to update.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"No valid fields provided for update.\" };\n    return [null, msg];\n}\n\nmsg.query = `UPDATE public.branch_m SET ${updateFields.join(', ')} WHERE branch_id = '${branch_id}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 300,
+        "wires": [
+            [
+                "n9o0p1q2r3s4t5u6v7w8"
+            ],
+            [
+                "g2h3i4j5k6l7m8n9o0p1"
+            ]
+        ]
+    },
+    {
+        "id": "n9o0p1q2r3s4t5u6v7w8",
+        "type": "postgresql",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Update Branch",
+        "query": "",
+        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 300,
+        "wires": [
+            [
+                "o0p1q2r3s4t5u6v7w8x9"
+            ]
+        ]
+    },
+    {
+        "id": "o0p1q2r3s4t5u6v7w8x9",
+        "type": "function",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Set Update Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Branch not found.\" };\n} else {\n    msg.statusCode = 200;\n    msg.payload = { message: \"Branch updated successfully.\" };\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 800,
+        "y": 300,
+        "wires": [
+            [
+                "g2h3i4j5k6l7m8n9o0p1"
+            ]
+        ]
+    },
+    {
+        "id": "p1q2r3s4t5u6v7w8x9y0",
+        "type": "http in",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "DELETE /branches/:branch_id",
+        "url": "/branches/:branch_id",
+        "method": "delete",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 140,
+        "y": 400,
+        "wires": [
+            [
+                "q2r3s4t5u6v7w8x9y0z1"
+            ]
+        ]
+    },
+    {
+        "id": "q2r3s4t5u6v7w8x9y0z1",
+        "type": "function",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Prepare Delete Query",
+        "func": "const { branch_id } = msg.req.params;\nif (!branch_id) {\n    node.warn(\"Missing branch_id for delete.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"branch_id is required.\" };\n    return [null, msg];\n}\nmsg.query = `DELETE FROM public.branch_m WHERE branch_id = '${branch_id}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 400,
+        "wires": [
+            [
+                "r3s4t5u6v7w8x9y0z1a2"
+            ],
+            [
+                "g2h3i4j5k6l7m8n9o0p1"
+            ]
+        ]
+    },
+    {
+        "id": "r3s4t5u6v7w8x9y0z1a2",
+        "type": "postgresql",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Delete Branch",
+        "query": "",
+        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 400,
+        "wires": [
+            [
+                "s4t5u6v7w8x9y0z1a2b3"
+            ]
+        ]
+    },
+    {
+        "id": "s4t5u6v7w8x9y0z1a2b3",
+        "type": "function",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Set Delete Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Branch not found.\" };\n} else {\n    msg.statusCode = 204; // No Content for successful delete\n    msg.payload = {};\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
+        "y": 400,
+        "wires": [
+            [
+                "g2h3i4j5k6l7m8n9o0p1"
+            ]
+        ]
+    },
+    {
+        "id": "e2803475c66fbcb8",
+        "type": "http in",
+        "z": "56ad11acd7070bcf",
+        "name": "GET /players",
+        "url": "/players",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 100,
+        "wires": [
+            [
+                "63d33f351d3b58a4"
+            ]
+        ]
+    },
+    {
+        "id": "63d33f351d3b58a4",
+        "type": "function",
+        "z": "56ad11acd7070bcf",
+        "name": "Prepare Select All Query",
+        "func": "const branchId = msg.req.query.branch_id;\nlet whereClause = '';\n\nif (branchId) {\n    whereClause = `WHERE pm.branch_id = '${branchId}'`;\n}\n\n// player_m (pm) と branch_m (bm) を結合して branch_nm を取得\nmsg.query = `\n    SELECT\n        pm.player_id,\n        pm.branch_id,\n        pm.familyname,\n        pm.firstname,\n        pm.familyname2,\n        pm.firstname2,\n        pm.sex,\n        pm.birthday,\n        pm.admissionday,\n        pm.xclass,\n        pm.height,\n        pm.weight,\n        pm.remarks,\n        pm.created,\n        bm.branch_nm  -- ★追加: 支部名を取得\n    FROM\n        public.player_m pm\n    JOIN\n        public.branch_m bm ON pm.branch_id = bm.branch_id\n    ${whereClause}\n    ORDER BY\n        pm.branch_id, pm.player_id;\n`;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 100,
+        "wires": [
+            [
+                "d55fb177e9c68402"
+            ]
+        ]
+    },
+    {
+        "id": "d55fb177e9c68402",
+        "type": "postgresql",
+        "z": "56ad11acd7070bcf",
+        "name": "Select All Players",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 100,
+        "wires": [
+            [
+                "81d46e28402a2bbe"
+            ]
+        ]
+    },
+    {
+        "id": "81d46e28402a2bbe",
+        "type": "http response",
+        "z": "56ad11acd7070bcf",
+        "name": "Send Response",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1100,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "331fc7a7badfbfe3",
+        "type": "http in",
+        "z": "56ad11acd7070bcf",
+        "name": "POST /players",
+        "url": "/players",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 200,
+        "wires": [
+            [
+                "57ae25605e099780"
+            ]
+        ]
+    },
+    {
+        "id": "57ae25605e099780",
+        "type": "function",
+        "z": "56ad11acd7070bcf",
+        "name": "Prepare Insert Query",
+        "func": "// 文字列値をSQLクエリに安全に埋め込むためのヘルパー関数\n// null/undefinedの場合はNULL、空文字列の場合は''、それ以外は'値'として返す\nfunction formatSqlString(value) {\n    if (value === null || value === undefined) {\n        return 'NULL';\n    }\n    const strValue = String(value);\n    if (strValue === '') {\n        return \"''\";\n    }\n    // 文字列内のシングルクォートをエスケープ (二重にする)\n    const escapedValue = strValue.replace(/'/g, \"''\");\n    return `'${escapedValue}'`;\n}\n\nconst { player_id, branch_id, familyname, firstname, familyname2, firstname2, sex, birthday, admissionday, xclass, height, weight, remarks } = msg.payload;\n\nif (!player_id || !branch_id || !familyname || !firstname || !sex) {\n    node.warn(\"Missing required fields for insert.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"player_id, branch_id, familyname, firstname, sex are required.\" };\n    return [null, msg];\n}\n\n// 日付型はそのままフォーマット\nconst birthdayVal = birthday ? `'${birthday}'` : 'NULL';\nconst admissiondayVal = admissionday ? `'${admissionday}'` : 'NULL';\n\n// 数値型はnullでない限りそのまま、nullの場合はNULL\nconst heightVal = height !== null ? height : 'NULL';\nconst weightVal = weight !== null ? weight : 'NULL';\n\n// 各文字列フィールドをformatSqlString関数で処理\nconst familyname2Sql = formatSqlString(familyname2);\nconst firstname2Sql = formatSqlString(firstname2);\nconst xclassSql = formatSqlString(xclass);\nconst remarksSql = formatSqlString(remarks);\n\nmsg.query = `INSERT INTO public.player_m (\n    player_id, branch_id, familyname, firstname, \n    familyname2, firstname2, sex, birthday, admissionday, \n    xclass, height, weight, remarks\n) VALUES (\n    '${player_id}', '${branch_id}', '${familyname}', '${firstname}', \n    ${familyname2Sql}, ${firstname2Sql}, '${sex}', ${birthdayVal}, ${admissiondayVal}, \n    ${xclassSql}, ${heightVal}, ${weightVal}, ${remarksSql}\n)`;\n\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 200,
+        "wires": [
+            [
+                "63d061efcc867023"
+            ],
+            [
+                "81d46e28402a2bbe"
+            ]
+        ]
+    },
+    {
+        "id": "63d061efcc867023",
+        "type": "postgresql",
+        "z": "56ad11acd7070bcf",
+        "name": "Insert Player",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 200,
+        "wires": [
+            [
+                "0d3551e53a7faa97"
+            ]
+        ]
+    },
+    {
+        "id": "0d3551e53a7faa97",
+        "type": "function",
+        "z": "56ad11acd7070bcf",
+        "name": "Set Success Response",
+        "func": "msg.statusCode = 201;\nmsg.payload = { message: \"Player created successfully.\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 200,
+        "wires": [
+            [
+                "81d46e28402a2bbe"
+            ]
+        ]
+    },
+    {
+        "id": "d40bdf870d348a0d",
+        "type": "http in",
+        "z": "56ad11acd7070bcf",
+        "name": "PUT /players/:branch_id/:player_id",
+        "url": "/players/:branch_id/:player_id",
+        "method": "put",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 300,
+        "wires": [
+            [
+                "53d0952b26d41db3"
+            ]
+        ]
+    },
+    {
+        "id": "53d0952b26d41db3",
+        "type": "function",
+        "z": "56ad11acd7070bcf",
+        "name": "Prepare Update Query",
+        "func": "// 文字列値をSQLクエリに安全に埋め込むためのヘルパー関数\n// null/undefinedの場合はNULL、空文字列の場合は''、それ以外は'値'として返す\nfunction formatSqlString(value) {\n    if (value === null || value === undefined) {\n        return 'NULL';\n    }\n    const strValue = String(value);\n    if (strValue === '') {\n        return \"''\";\n    }\n    // 文字列内のシングルクォートをエスケープ (二重にする)\n    const escapedValue = strValue.replace(/'/g, \"''\");\n    return `'${escapedValue}'`;\n}\n\nconst { branch_id, player_id } = msg.req.params;\nconst { familyname, firstname, familyname2, firstname2, sex, birthday, admissionday, xclass, height, weight, remarks } = msg.payload;\n\nlet updateFields = [];\n\n// 各フィールドをformatSqlString関数で処理し、updateFieldsに追加\nif (familyname !== undefined) updateFields.push(`familyname = ${formatSqlString(familyname)}`);\nif (firstname !== undefined) updateFields.push(`firstname = ${formatSqlString(firstname)}`);\n// familyname2, firstname2, xclass, remarks も同様に修正\nif (familyname2 !== undefined) updateFields.push(`familyname2 = ${formatSqlString(familyname2)}`);\nif (firstname2 !== undefined) updateFields.push(`firstname2 = ${formatSqlString(firstname2)}`);\nif (sex !== undefined) updateFields.push(`sex = ${formatSqlString(sex)}`);\nif (birthday !== undefined) updateFields.push(`birthday = ${birthday ? `'${birthday}'` : 'NULL'}`);\nif (admissionday !== undefined) updateFields.push(`admissionday = ${admissionday ? `'${admissionday}'` : 'NULL'}`);\nif (xclass !== undefined) updateFields.push(`xclass = ${formatSqlString(xclass)}`);\nif (height !== undefined) updateFields.push(`height = ${height !== null ? height : 'NULL'}`);\nif (weight !== undefined) updateFields.push(`weight = ${weight !== null ? weight : 'NULL'}`);\nif (remarks !== undefined) updateFields.push(`remarks = ${formatSqlString(remarks)}`);\n\nif (updateFields.length === 0) {\n    node.warn(\"No fields to update.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"No fields provided for update.\" };\n    return [null, msg];\n}\n\nmsg.query = `UPDATE public.player_m SET ${updateFields.join(', ')} WHERE branch_id = '${branch_id}' AND player_id = '${player_id}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 300,
+        "wires": [
+            [
+                "70a0a7f01dfc2da2"
+            ],
+            [
+                "81d46e28402a2bbe"
+            ]
+        ]
+    },
+    {
+        "id": "70a0a7f01dfc2da2",
+        "type": "postgresql",
+        "z": "56ad11acd7070bcf",
+        "name": "Update Player",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 300,
+        "wires": [
+            [
+                "0adab08ddea77366"
+            ]
+        ]
+    },
+    {
+        "id": "0adab08ddea77366",
+        "type": "function",
+        "z": "56ad11acd7070bcf",
+        "name": "Set Update Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Player not found.\" };\n} else {\n    msg.statusCode = 200;\n    msg.payload = { message: \"Player updated successfully.\" };\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 300,
+        "wires": [
+            [
+                "81d46e28402a2bbe"
+            ]
+        ]
+    },
+    {
+        "id": "3ada68c2910f84d2",
+        "type": "http in",
+        "z": "56ad11acd7070bcf",
+        "name": "DELETE /players/:branch_id/:player_id",
+        "url": "/players/:branch_id/:player_id",
+        "method": "delete",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 400,
+        "wires": [
+            [
+                "f90c68c350efd733"
+            ]
+        ]
+    },
+    {
+        "id": "f90c68c350efd733",
+        "type": "function",
+        "z": "56ad11acd7070bcf",
+        "name": "Prepare Delete Query",
+        "func": "const { branch_id, player_id } = msg.req.params;\nif (!branch_id || !player_id) {\n    node.warn(\"Missing branch_id or player_id for delete.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"branch_id and player_id are required.\" };\n    return [null, msg];\n}\nmsg.query = `DELETE FROM public.player_m WHERE branch_id = '${branch_id}' AND player_id = '${player_id}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 400,
+        "wires": [
+            [
+                "34e898361833f42a"
+            ],
+            [
+                "81d46e28402a2bbe"
+            ]
+        ]
+    },
+    {
+        "id": "34e898361833f42a",
+        "type": "postgresql",
+        "z": "56ad11acd7070bcf",
+        "name": "Delete Player",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 400,
+        "wires": [
+            [
+                "4f03ae53d2274799"
+            ]
+        ]
+    },
+    {
+        "id": "4f03ae53d2274799",
+        "type": "function",
+        "z": "56ad11acd7070bcf",
+        "name": "Set Delete Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Player not found.\" };\n} else {\n    msg.statusCode = 204; // No Content for successful delete\n    msg.payload = {};\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 400,
+        "wires": [
+            [
+                "81d46e28402a2bbe"
+            ]
+        ]
+    },
+    {
+        "id": "f4c565813aead6d3",
+        "type": "http in",
+        "z": "56ad11acd7070bcf",
+        "name": "GET /branches",
+        "url": "/branches",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 500,
+        "wires": [
+            [
+                "9b69a48615e218cd"
+            ]
+        ]
+    },
+    {
+        "id": "9b69a48615e218cd",
+        "type": "function",
+        "z": "56ad11acd7070bcf",
+        "name": "Prepare Select Branches Query",
+        "func": "msg.query = `SELECT branch_id, branch_nm FROM public.branch_m ORDER BY branch_id`;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 500,
+        "wires": [
+            [
+                "123f2beac5a86969"
+            ]
+        ]
+    },
+    {
+        "id": "123f2beac5a86969",
+        "type": "postgresql",
+        "z": "56ad11acd7070bcf",
+        "name": "Select Branches",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 500,
+        "wires": [
+            [
+                "81d46e28402a2bbe"
+            ]
+        ]
+    },
+    {
+        "id": "v001",
+        "type": "http in",
+        "z": "venue_flow",
+        "name": "GET /venues",
+        "url": "/venues",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 100,
+        "wires": [
+            [
+                "v002"
+            ]
+        ]
+    },
+    {
+        "id": "v002",
+        "type": "function",
+        "z": "venue_flow",
+        "name": "Prepare Select All Query",
+        "func": "msg.query = `SELECT venue_id, venue_nm, remarks, created FROM public.venue_m ORDER BY venue_id`;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 100,
+        "wires": [
+            [
+                "v003"
+            ]
+        ]
+    },
+    {
+        "id": "v003",
+        "type": "postgresql",
+        "z": "venue_flow",
+        "name": "Select All Venues",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 100,
+        "wires": [
+            [
+                "v999"
+            ]
+        ]
+    },
+    {
+        "id": "v004",
+        "type": "http in",
+        "z": "venue_flow",
+        "name": "POST /venues",
+        "url": "/venues",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 200,
+        "wires": [
+            [
+                "v005"
+            ]
+        ]
+    },
+    {
+        "id": "v005",
+        "type": "function",
+        "z": "venue_flow",
+        "name": "Prepare Insert Query",
+        "func": "const { venue_id, venue_nm, remarks } = msg.payload;\nif (!venue_id || !venue_nm) {\n    node.warn(\"Missing required fields for insert.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"venue_id and venue_nm are required.\" };\n    return [null, msg];\n}\nmsg.query = `INSERT INTO public.venue_m (venue_id, venue_nm, remarks) VALUES ('${venue_id}', '${venue_nm}', '${remarks || ''}')`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 200,
+        "wires": [
+            [
+                "v006"
+            ],
+            [
+                "v999"
+            ]
+        ]
+    },
+    {
+        "id": "v006",
+        "type": "postgresql",
+        "z": "venue_flow",
+        "name": "Insert Venue",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 200,
+        "wires": [
+            [
+                "v007"
+            ]
+        ]
+    },
+    {
+        "id": "v007",
+        "type": "function",
+        "z": "venue_flow",
+        "name": "Set Success Response",
+        "func": "msg.statusCode = 201;\nmsg.payload = { message: \"Venue created successfully.\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 200,
+        "wires": [
+            [
+                "v999"
+            ]
+        ]
+    },
+    {
+        "id": "v008",
+        "type": "http in",
+        "z": "venue_flow",
+        "name": "PUT /venues/:venue_id",
+        "url": "/venues/:venue_id",
+        "method": "put",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 300,
+        "wires": [
+            [
+                "v009"
+            ]
+        ]
+    },
+    {
+        "id": "v009",
+        "type": "function",
+        "z": "venue_flow",
+        "name": "Prepare Update Query",
+        "func": "const { venue_id } = msg.req.params;\nconst { venue_nm, remarks } = msg.payload;\n\nlet updateFields = [];\nif (venue_nm !== undefined) updateFields.push(`venue_nm = '${venue_nm}'`);\n// remarks が undefined でない、かつ null でない場合はクエリに含める\n// null を明示的に設定したい場合は remarks === null も含める\nif (remarks !== undefined) updateFields.push(`remarks = '${remarks || ''}'`);\n\nif (updateFields.length === 0) {\n    node.warn(\"No fields to update.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"No fields provided for update.\" };\n    return [null, msg];\n}\n\nmsg.query = `UPDATE public.venue_m SET ${updateFields.join(', ')} WHERE venue_id = '${venue_id}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 300,
+        "wires": [
+            [
+                "v010"
+            ],
+            [
+                "v999"
+            ]
+        ]
+    },
+    {
+        "id": "v010",
+        "type": "postgresql",
+        "z": "venue_flow",
+        "name": "Update Venue",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 300,
+        "wires": [
+            [
+                "v011"
+            ]
+        ]
+    },
+    {
+        "id": "v011",
+        "type": "function",
+        "z": "venue_flow",
+        "name": "Set Update Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Venue not found.\" };\n} else {\n    msg.statusCode = 200;\n    msg.payload = { message: \"Venue updated successfully.\" };\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 300,
+        "wires": [
+            [
+                "v999"
+            ]
+        ]
+    },
+    {
+        "id": "v012",
+        "type": "http in",
+        "z": "venue_flow",
+        "name": "DELETE /venues/:venue_id",
+        "url": "/venues/:venue_id",
+        "method": "delete",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 400,
+        "wires": [
+            [
+                "v013"
+            ]
+        ]
+    },
+    {
+        "id": "v013",
+        "type": "function",
+        "z": "venue_flow",
+        "name": "Prepare Delete Query",
+        "func": "const { venue_id } = msg.req.params;\nif (!venue_id) {\n    node.warn(\"Missing venue_id for delete.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"venue_id is required.\" };\n    return [null, msg];\n}\nmsg.query = `DELETE FROM public.venue_m WHERE venue_id = '${venue_id}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 400,
+        "wires": [
+            [
+                "v014"
+            ],
+            [
+                "v999"
+            ]
+        ]
+    },
+    {
+        "id": "v014",
+        "type": "postgresql",
+        "z": "venue_flow",
+        "name": "Delete Venue",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 400,
+        "wires": [
+            [
+                "v015"
+            ]
+        ]
+    },
+    {
+        "id": "v015",
+        "type": "function",
+        "z": "venue_flow",
+        "name": "Set Delete Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Venue not found.\" };\n} else {\n    msg.statusCode = 204; // No Content for successful delete\n    msg.payload = {};\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 400,
+        "wires": [
+            [
+                "v999"
+            ]
+        ]
+    },
+    {
+        "id": "v999",
+        "type": "http response",
+        "z": "venue_flow",
+        "name": "Send Response",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1100,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "912121e4d2ef713d",
+        "type": "http in",
+        "z": "658402238263a0e3",
+        "name": "GET /categories",
+        "url": "/categories",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 100,
+        "wires": [
+            [
+                "7aa582ba6e239f0c"
+            ]
+        ]
+    },
+    {
+        "id": "7aa582ba6e239f0c",
+        "type": "function",
+        "z": "658402238263a0e3",
+        "name": "Prepare Select All Query",
+        "func": "msg.query = `SELECT category_id, category_nm, age_min, age_max, physical_index_min, physical_index_max, sex_rule, remarks, created FROM public.category_m ORDER BY category_id`;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 100,
+        "wires": [
+            [
+                "a2c9d60a71f92ac5"
+            ]
+        ]
+    },
+    {
+        "id": "a2c9d60a71f92ac5",
+        "type": "postgresql",
+        "z": "658402238263a0e3",
+        "name": "Select All Categories",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 100,
+        "wires": [
+            [
+                "6c2561d7a09553cf"
+            ]
+        ]
+    },
+    {
+        "id": "cf9477a549db2601",
+        "type": "http in",
+        "z": "658402238263a0e3",
+        "name": "POST /categories",
+        "url": "/categories",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 200,
+        "wires": [
+            [
+                "c9632c9daa369758"
+            ]
+        ]
+    },
+    {
+        "id": "c9632c9daa369758",
+        "type": "function",
+        "z": "658402238263a0e3",
+        "name": "Prepare Insert Query",
+        "func": "// 文字列値をSQLクエリに安全に埋め込むためのヘルパー関数\nfunction formatSqlString(value) {\n    if (value === null || value === undefined) {\n        return 'NULL';\n    }\n    const strValue = String(value);\n    if (strValue === '') {\n        return \"''\";\n    }\n    const escapedValue = strValue.replace(/'/g, \"''\");\n    return `'${escapedValue}'`;\n}\n\nconst { category_id, category_nm, age_min, age_max, physical_index_min, physical_index_max, sex_rule, remarks } = msg.payload;\n\nif (!category_id || !category_nm || !sex_rule) {\n    node.warn(\"Missing required fields for insert.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"category_id, category_nm, sex_rule are required.\" };\n    return [null, msg];\n}\n\nconst ageMinVal = age_min !== null ? age_min : 'NULL';\nconst ageMaxVal = age_max !== null ? age_max : 'NULL';\nconst physicalIndexMinVal = physical_index_min !== null ? physical_index_min : 'NULL';\nconst physicalIndexMaxVal = physical_index_max !== null ? physical_index_max : 'NULL';\n\nmsg.query = `INSERT INTO public.category_m (\n    category_id, category_nm, age_min, age_max, \n    physical_index_min, physical_index_max, sex_rule, remarks\n) VALUES (\n    '${category_id}', ${formatSqlString(category_nm)}, ${ageMinVal}, ${ageMaxVal}, \n    ${physicalIndexMinVal}, ${physicalIndexMaxVal}, ${formatSqlString(sex_rule)}, ${formatSqlString(remarks)}\n)`;\n\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 200,
+        "wires": [
+            [
+                "39ead171ef515368"
+            ],
+            [
+                "6c2561d7a09553cf"
+            ]
+        ]
+    },
+    {
+        "id": "39ead171ef515368",
+        "type": "postgresql",
+        "z": "658402238263a0e3",
+        "name": "Insert Category",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 200,
+        "wires": [
+            [
+                "ff03f5a07d128b0d"
+            ]
+        ]
+    },
+    {
+        "id": "ff03f5a07d128b0d",
+        "type": "function",
+        "z": "658402238263a0e3",
+        "name": "Set Success Response",
+        "func": "msg.statusCode = 201;\nmsg.payload = { message: \"Category created successfully.\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 200,
+        "wires": [
+            [
+                "6c2561d7a09553cf"
+            ]
+        ]
+    },
+    {
+        "id": "32bf65b8666e554a",
+        "type": "http in",
+        "z": "658402238263a0e3",
+        "name": "PUT /categories/:category_id",
+        "url": "/categories/:category_id",
+        "method": "put",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 300,
+        "wires": [
+            [
+                "fae33dc45135590f"
+            ]
+        ]
+    },
+    {
+        "id": "fae33dc45135590f",
+        "type": "function",
+        "z": "658402238263a0e3",
+        "name": "Prepare Update Query",
+        "func": "// 文字列値をSQLクエリに安全に埋め込むためのヘルパー関数\nfunction formatSqlString(value) {\n    if (value === null || value === undefined) {\n        return 'NULL';\n    }\n    const strValue = String(value);\n    if (strValue === '') {\n        return \"''\";\n    }\n    const escapedValue = strValue.replace(/'/g, \"''\");\n    return `'${escapedValue}'`;\n}\n\nconst categoryId = msg.req.params.category_id;\nconst { category_nm, age_min, age_max, physical_index_min, physical_index_max, sex_rule, remarks } = msg.payload;\n\nlet updateFields = [];\n\nif (category_nm !== undefined) updateFields.push(`category_nm = ${formatSqlString(category_nm)}`);\nif (age_min !== undefined) updateFields.push(`age_min = ${age_min !== null ? age_min : 'NULL'}`);\nif (age_max !== undefined) updateFields.push(`age_max = ${age_max !== null ? age_max : 'NULL'}`);\nif (physical_index_min !== undefined) updateFields.push(`physical_index_min = ${physical_index_min !== null ? physical_index_min : 'NULL'}`);\nif (physical_index_max !== undefined) updateFields.push(`physical_index_max = ${physical_index_max !== null ? physical_index_max : 'NULL'}`);\nif (sex_rule !== undefined) updateFields.push(`sex_rule = ${formatSqlString(sex_rule)}`);\nif (remarks !== undefined) updateFields.push(`remarks = ${formatSqlString(remarks)}`);\n\nif (updateFields.length === 0) {\n    node.warn(\"No fields to update.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"No fields provided for update.\" };\n    return [null, msg];\n}\n\nmsg.query = `UPDATE public.category_m SET ${updateFields.join(', ')} WHERE category_id = '${categoryId}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 300,
+        "wires": [
+            [
+                "3ab3decd86f4243b"
+            ],
+            [
+                "6c2561d7a09553cf"
+            ]
+        ]
+    },
+    {
+        "id": "3ab3decd86f4243b",
+        "type": "postgresql",
+        "z": "658402238263a0e3",
+        "name": "Update Category",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 300,
+        "wires": [
+            [
+                "523a7eda51dcf957"
+            ]
+        ]
+    },
+    {
+        "id": "523a7eda51dcf957",
+        "type": "function",
+        "z": "658402238263a0e3",
+        "name": "Set Update Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Category not found.\" };\n} else {\n    msg.statusCode = 200;\n    msg.payload = { message: \"Category updated successfully.\" };\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 300,
+        "wires": [
+            [
+                "6c2561d7a09553cf"
+            ]
+        ]
+    },
+    {
+        "id": "7243345b4429d56d",
+        "type": "http in",
+        "z": "658402238263a0e3",
+        "name": "DELETE /categories/:category_id",
+        "url": "/categories/:category_id",
+        "method": "delete",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 400,
+        "wires": [
+            [
+                "85c65ba34487fa7b"
+            ]
+        ]
+    },
+    {
+        "id": "85c65ba34487fa7b",
+        "type": "function",
+        "z": "658402238263a0e3",
+        "name": "Prepare Delete Query",
+        "func": "const categoryId = msg.req.params.category_id;\nif (!categoryId) {\n    node.warn(\"Missing category_id for delete.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"category_id is required.\" };\n    return [null, msg];\n}\nmsg.query = `DELETE FROM public.category_m WHERE category_id = '${categoryId}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 400,
+        "wires": [
+            [
+                "203d98dad98c65fb"
+            ],
+            [
+                "6c2561d7a09553cf"
+            ]
+        ]
+    },
+    {
+        "id": "203d98dad98c65fb",
+        "type": "postgresql",
+        "z": "658402238263a0e3",
+        "name": "Delete Category",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 400,
+        "wires": [
+            [
+                "134b73786eaefdde"
+            ]
+        ]
+    },
+    {
+        "id": "134b73786eaefdde",
+        "type": "function",
+        "z": "658402238263a0e3",
+        "name": "Set Delete Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Category not found.\" };\n} else {\n    msg.statusCode = 204; // No Content for successful delete\n    msg.payload = {};\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 400,
+        "wires": [
+            [
+                "6c2561d7a09553cf"
+            ]
+        ]
+    },
+    {
+        "id": "a21ff3eea443ba2e",
+        "type": "http in",
+        "z": "658402238263a0e3",
+        "name": "GET /categories/:category_id",
+        "url": "/categories/:category_id",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 500,
+        "wires": [
+            [
+                "54d4dd6fdec115c8"
+            ]
+        ]
+    },
+    {
+        "id": "54d4dd6fdec115c8",
+        "type": "function",
+        "z": "658402238263a0e3",
+        "name": "Prepare Select By ID Query",
+        "func": "const categoryId = msg.req.params.category_id;\nif (!categoryId) {\n    msg.statusCode = 400;\n    msg.payload = { error: \"Category ID is required.\" };\n    return [null, msg];\n}\nmsg.query = `SELECT category_id, category_nm, age_min, age_max, physical_index_min, physical_index_max, sex_rule, remarks, created FROM public.category_m WHERE category_id = '${categoryId}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 500,
+        "wires": [
+            [
+                "ff67f504a0a4f7bd"
+            ],
+            [
+                "6c2561d7a09553cf"
+            ]
+        ]
+    },
+    {
+        "id": "ff67f504a0a4f7bd",
+        "type": "postgresql",
+        "z": "658402238263a0e3",
+        "name": "Select Category By ID",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 500,
+        "wires": [
+            [
+                "6540940189c9e024"
+            ]
+        ]
+    },
+    {
+        "id": "6540940189c9e024",
+        "type": "function",
+        "z": "658402238263a0e3",
+        "name": "Set Response",
+        "func": "if (msg.payload.length === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Category not found.\" };\n} else {\n    msg.statusCode = 200;\n    msg.payload = msg.payload[0];\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 500,
+        "wires": [
+            [
+                "6c2561d7a09553cf"
+            ]
+        ]
+    },
+    {
+        "id": "6c2561d7a09553cf",
+        "type": "http response",
+        "z": "658402238263a0e3",
+        "name": "Send Response",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1100,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "t001",
+        "type": "http in",
+        "z": "tournament_flow",
+        "name": "GET /tournaments",
+        "url": "/tournaments",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 90,
+        "y": 100,
+        "wires": [
+            [
+                "t002"
+            ]
+        ]
+    },
+    {
+        "id": "t002",
+        "type": "function",
+        "z": "tournament_flow",
+        "name": "Prepare Select All Query (Dynamic Sort)",
+        "func": "const sortBy = msg.req.query.sort || 'start_date'; // デフォルトは開催日\nconst orderBy = msg.req.query.order || 'DESC'; // デフォルトは降順\n\n// SQLインジェクション対策のための許可されたカラムリスト\nconst allowedSortBy = ['tournament_id', 'tournament_nm', 'start_date', 'end_date', 'created'];\nconst finalSortBy = allowedSortBy.includes(sortBy) ? sortBy : 'start_date';\n\n// 順序のバリデーション\nconst finalOrderBy = (orderBy.toUpperCase() === 'ASC' || orderBy.toUpperCase() === 'DESC') ? orderBy.toUpperCase() : 'DESC';\n\nmsg.query = `SELECT tournament_id, tournament_nm, start_date, end_date, venue_id, number_coat, remarks, created FROM public.tournament_m ORDER BY ${finalSortBy} ${finalOrderBy}`;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 100,
+        "wires": [
+            [
+                "t003"
+            ]
+        ]
+    },
+    {
+        "id": "t003",
+        "type": "postgresql",
+        "z": "tournament_flow",
+        "name": "Select All Tournaments",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 640,
+        "y": 100,
+        "wires": [
+            [
+                "t999"
+            ]
+        ]
+    },
+    {
+        "id": "t004",
+        "type": "http in",
+        "z": "tournament_flow",
+        "name": "GET /tournaments/:tournament_id",
+        "url": "/tournaments/:tournament_id",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 140,
+        "y": 200,
+        "wires": [
+            [
+                "t005"
+            ]
+        ]
+    },
+    {
+        "id": "t005",
+        "type": "function",
+        "z": "tournament_flow",
+        "name": "Prepare Select By ID Query",
+        "func": "const tournamentId = msg.req.params.tournament_id;\nif (!tournamentId) {\n    msg.statusCode = 400;\n    msg.payload = { error: \"Tournament ID is required.\" };\n    return [null, msg];\n}\nmsg.query = `SELECT tournament_id, tournament_nm, start_date, end_date, venue_id, number_coat, remarks, created FROM public.tournament_m WHERE tournament_id = '${tournamentId}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 200,
+        "wires": [
+            [
+                "t006"
+            ],
+            [
+                "t999"
+            ]
+        ]
+    },
+    {
+        "id": "t006",
+        "type": "postgresql",
+        "z": "tournament_flow",
+        "name": "Select Tournament By ID",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 690,
+        "y": 200,
+        "wires": [
+            [
+                "t007"
+            ]
+        ]
+    },
+    {
+        "id": "t007",
+        "type": "function",
+        "z": "tournament_flow",
+        "name": "Set Response",
+        "func": "if (msg.payload.length === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Tournament not found.\" };\n} else {\n    msg.statusCode = 200;\n    msg.payload = msg.payload[0];\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 900,
+        "y": 200,
+        "wires": [
+            [
+                "t999"
+            ]
+        ]
+    },
+    {
+        "id": "t008",
+        "type": "http in",
+        "z": "tournament_flow",
+        "name": "POST /tournaments",
+        "url": "/tournaments",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 90,
+        "y": 300,
+        "wires": [
+            [
+                "t009"
+            ]
+        ]
+    },
+    {
+        "id": "t009",
+        "type": "function",
+        "z": "tournament_flow",
+        "name": "Prepare Insert Query",
+        "func": "// 文字列値をSQLクエリに安全に埋め込むためのヘルパー関数\nfunction formatSqlString(value) {\n    if (value === null || value === undefined) {\n        return 'NULL';\n    }\n    const strValue = String(value);\n    if (strValue === '') {\n        return \"''\";\n    }\n    const escapedValue = strValue.replace(/'/g, \"''\");\n    return `'${escapedValue}'`;\n}\n\nconst { tournament_id, tournament_nm, start_date, end_date, venue_id, number_coat, remarks } = msg.payload;\n\nif (!tournament_id || !tournament_nm || !start_date || !end_date) {\n    node.warn(\"Missing required fields for insert.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"tournament_id, tournament_nm, start_date, end_date are required.\" };\n    return [null, msg];\n}\n\n// 日付型はそのままフォーマット\nconst startDateVal = start_date ? `'${start_date}'` : 'NULL';\nconst endDateVal = end_date ? `'${end_date}'` : 'NULL';\n\n// 数値型はnullでない限りそのまま、nullの場合はNULL\nconst numberCoatVal = number_coat !== null ? number_coat : 'NULL';\n\n// 各文字列フィールドをformatSqlString関数で処理\nconst venueIdSql = formatSqlString(venue_id);\nconst remarksSql = formatSqlString(remarks);\n\nmsg.query = `INSERT INTO public.tournament_m (\n    tournament_id, tournament_nm, start_date, end_date, \n    venue_id, number_coat, remarks\n) VALUES (\n    '${tournament_id}', ${formatSqlString(tournament_nm)}, ${startDateVal}, ${endDateVal}, \n    ${venueIdSql}, ${numberCoatVal}, ${remarksSql}\n)`;\n\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 300,
+        "y": 300,
+        "wires": [
+            [
+                "t010"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "t010",
+        "type": "postgresql",
+        "z": "tournament_flow",
+        "name": "Insert Tournament",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 550,
+        "y": 300,
+        "wires": [
+            [
+                "t011"
+            ]
+        ]
+    },
+    {
+        "id": "t011",
+        "type": "function",
+        "z": "tournament_flow",
+        "name": "Set Success Response",
+        "func": "msg.statusCode = 201;\nmsg.payload = { message: \"Tournament created successfully.\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 770,
+        "y": 300,
+        "wires": [
+            [
+                "t999"
+            ]
+        ]
+    },
+    {
+        "id": "t012",
+        "type": "http in",
+        "z": "tournament_flow",
+        "name": "PUT /tournaments/:tournament_id",
+        "url": "/tournaments/:tournament_id",
+        "method": "put",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 140,
+        "y": 400,
+        "wires": [
+            [
+                "t013"
+            ]
+        ]
+    },
+    {
+        "id": "t013",
+        "type": "function",
+        "z": "tournament_flow",
+        "name": "Prepare Update Query",
+        "func": "// 文字列値をSQLクエリに安全に埋め込むためのヘルパー関数\nfunction formatSqlString(value) {\n    if (value === null || value === undefined) {\n        return 'NULL';\n    }\n    const strValue = String(value);\n    if (strValue === '') {\n        return \"''\";\n    }\n    const escapedValue = strValue.replace(/'/g, \"''\");\n    return `'${escapedValue}'`;\n}\n\nconst tournamentId = msg.req.params.tournament_id;\nconst { tournament_nm, start_date, end_date, venue_id, number_coat, remarks } = msg.payload;\n\nlet updateFields = [];\n\nif (tournament_nm !== undefined) updateFields.push(`tournament_nm = ${formatSqlString(tournament_nm)}`);\nif (start_date !== undefined) updateFields.push(`start_date = ${start_date ? `'${start_date}'` : 'NULL'}`);\nif (end_date !== undefined) updateFields.push(`end_date = ${end_date ? `'${end_date}'` : 'NULL'}`);\nif (venue_id !== undefined) updateFields.push(`venue_id = ${formatSqlString(venue_id)}`);\nif (number_coat !== undefined) updateFields.push(`number_coat = ${number_coat !== null ? number_coat : 'NULL'}`);\nif (remarks !== undefined) updateFields.push(`remarks = ${formatSqlString(remarks)}`);\n\nif (updateFields.length === 0) {\n    node.warn(\"No fields to update.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"No fields provided for update.\" };\n    return [null, msg];\n}\n\nmsg.query = `UPDATE public.tournament_m SET ${updateFields.join(', ')} WHERE tournament_id = '${tournamentId}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 400,
+        "wires": [
+            [
+                "t014"
+            ],
+            [
+                "t999"
+            ]
+        ]
+    },
+    {
+        "id": "t014",
+        "type": "postgresql",
+        "z": "tournament_flow",
+        "name": "Update Tournament",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 630,
+        "y": 400,
+        "wires": [
+            [
+                "t015"
+            ]
+        ]
+    },
+    {
+        "id": "t015",
+        "type": "function",
+        "z": "tournament_flow",
+        "name": "Set Update Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Tournament not found.\" };\n} else {\n    msg.statusCode = 200;\n    msg.payload = { message: \"Tournament updated successfully.\" };\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 400,
+        "wires": [
+            [
+                "t999"
+            ]
+        ]
+    },
+    {
+        "id": "t016",
+        "type": "http in",
+        "z": "tournament_flow",
+        "name": "DELETE /tournaments/:tournament_id",
+        "url": "/tournaments/:tournament_id",
+        "method": "delete",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 500,
+        "wires": [
+            [
+                "t017"
+            ]
+        ]
+    },
+    {
+        "id": "t017",
+        "type": "function",
+        "z": "tournament_flow",
+        "name": "Prepare Delete Query",
+        "func": "const tournamentId = msg.req.params.tournament_id;\nif (!tournamentId) {\n    node.warn(\"Missing tournament_id for delete.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"Tournament ID is required.\" };\n    return [null, msg];\n}\nmsg.query = `DELETE FROM public.tournament_m WHERE tournament_id = '${tournamentId}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 500,
+        "wires": [
+            [
+                "t018"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "t018",
+        "type": "postgresql",
+        "z": "tournament_flow",
+        "name": "Delete Tournament",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 630,
+        "y": 500,
+        "wires": [
+            [
+                "t019"
+            ]
+        ]
+    },
+    {
+        "id": "t019",
+        "type": "function",
+        "z": "tournament_flow",
+        "name": "Set Delete Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Tournament not found.\" };\n} else {\n    msg.statusCode = 204; // No Content for successful delete\n    msg.payload = {};\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 500,
+        "wires": [
+            [
+                "t999"
+            ]
+        ]
+    },
+    {
+        "id": "t999",
+        "type": "http response",
+        "z": "tournament_flow",
+        "name": "Send Response",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1120,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "tc001",
+        "type": "http in",
+        "z": "tournament_category_flow",
+        "name": "GET /tournament_categories/:tournament_id",
+        "url": "/tournament_categories/:tournament_id",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 170,
+        "y": 100,
+        "wires": [
+            [
+                "tc002"
+            ]
+        ]
+    },
+    {
+        "id": "tc002",
+        "type": "function",
+        "z": "tournament_category_flow",
+        "name": "Prepare Select Linked Categories Query",
+        "func": "const { tournament_id } = msg.req.params;\nif (!tournament_id) {\n    node.warn(\"Missing tournament_id for select.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"tournament_id is required.\" };\n    return [null, msg];\n}\n// tournament_category_map と category_m を結合してカテゴリー名も取得\nmsg.query = `SELECT tcm.tournament_id, tcm.category_id, cm.category_nm FROM public.tournament_category_map tcm JOIN public.category_m cm ON tcm.category_id = cm.category_id WHERE tcm.tournament_id = '${tournament_id}' ORDER BY tcm.category_id`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 520,
+        "y": 100,
+        "wires": [
+            [
+                "tc003"
+            ],
+            [
+                "tc999"
+            ]
+        ]
+    },
+    {
+        "id": "tc003",
+        "type": "postgresql",
+        "z": "tournament_category_flow",
+        "name": "Select Linked Categories",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 830,
+        "y": 100,
+        "wires": [
+            [
+                "tc999"
+            ]
+        ]
+    },
+    {
+        "id": "tc004",
+        "type": "http in",
+        "z": "tournament_category_flow",
+        "name": "POST /tournament_categories",
+        "url": "/tournament_categories",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 200,
+        "wires": [
+            [
+                "tc005"
+            ]
+        ]
+    },
+    {
+        "id": "tc005",
+        "type": "function",
+        "z": "tournament_category_flow",
+        "name": "Prepare Insert Query",
+        "func": "const { tournament_id, category_id } = msg.payload;\nif (!tournament_id || !category_id) {\n    node.warn(\"Missing required fields for insert.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"tournament_id and category_id are required.\" };\n    return [null, msg];\n}\nmsg.query = `INSERT INTO public.tournament_category_map (tournament_id, category_id) VALUES ('${tournament_id}', '${category_id}')`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 200,
+        "wires": [
+            [
+                "tc006"
+            ],
+            [
+                "tc999"
+            ]
+        ]
+    },
+    {
+        "id": "tc006",
+        "type": "postgresql",
+        "z": "tournament_category_flow",
+        "name": "Insert Tournament Category",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 620,
+        "y": 200,
+        "wires": [
+            [
+                "tc007"
+            ]
+        ]
+    },
+    {
+        "id": "tc007",
+        "type": "function",
+        "z": "tournament_category_flow",
+        "name": "Set Success Response",
+        "func": "msg.statusCode = 201;\nmsg.payload = { message: \"Tournament category added successfully.\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 870,
+        "y": 200,
+        "wires": [
+            [
+                "tc999"
+            ]
+        ]
+    },
+    {
+        "id": "tc008",
+        "type": "http in",
+        "z": "tournament_category_flow",
+        "name": "DELETE /tournament_categories/:tournament_id/:category_id",
+        "url": "/tournament_categories/:tournament_id/:category_id",
+        "method": "delete",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 220,
+        "y": 300,
+        "wires": [
+            [
+                "tc009"
+            ]
+        ]
+    },
+    {
+        "id": "tc009",
+        "type": "function",
+        "z": "tournament_category_flow",
+        "name": "Prepare Delete Query",
+        "func": "const { tournament_id, category_id } = msg.req.params;\nif (!tournament_id || !category_id) {\n    node.warn(\"Missing tournament_id or category_id for delete.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"tournament_id and category_id are required.\" };\n    return [null, msg];\n}\nmsg.query = `DELETE FROM public.tournament_category_map WHERE tournament_id = '${tournament_id}' AND category_id = '${category_id}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 300,
+        "wires": [
+            [
+                "tc010"
+            ],
+            [
+                "tc999"
+            ]
+        ]
+    },
+    {
+        "id": "tc010",
+        "type": "postgresql",
+        "z": "tournament_category_flow",
+        "name": "Delete Tournament Category",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 820,
+        "y": 300,
+        "wires": [
+            [
+                "tc011"
+            ]
+        ]
+    },
+    {
+        "id": "tc011",
+        "type": "function",
+        "z": "tournament_category_flow",
+        "name": "Set Delete Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Tournament category not found.\" };\n} else {\n    msg.statusCode = 204; // No Content for successful delete\n    msg.payload = {};\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1060,
+        "y": 300,
+        "wires": [
+            [
+                "tc999"
+            ]
+        ]
+    },
+    {
+        "id": "tc999",
+        "type": "http response",
+        "z": "tournament_category_flow",
+        "name": "Send Response",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1260,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "0b12eae387542859",
+        "type": "http in",
+        "z": "9d8a9a504f2add4b",
+        "name": "GET /tournament-participants",
+        "url": "/tournament-participants",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 100,
+        "wires": [
+            [
+                "dd2092f956a59f15"
+            ]
+        ]
+    },
+    {
+        "id": "dd2092f956a59f15",
+        "type": "function",
+        "z": "9d8a9a504f2add4b",
+        "name": "Prepare Select All Query",
+        "func": "const tournamentId = msg.req.query.tournament_id;\nconst categoryId = msg.req.query.category_id;\nlet whereClause = 'WHERE 1=1';\n\nif (tournamentId) {\n    whereClause += ` AND tp.tournament_id = '${tournamentId}'`;\n}\nif (categoryId) {\n    whereClause += ` AND tp.category_id = '${categoryId}'`;\n}\n\nmsg.query = `\n    SELECT\n        tp.tournament_id,\n        tm.tournament_nm,\n        tp.player_id,\n        tp.branch_id,\n        bm.branch_nm,\n        pm.familyname,\n        pm.firstname,\n        pm.familyname2,\n        pm.firstname2,\n        pm.sex AS player_sex,\n        pm.birthday AS player_birthday,\n        pm.admissionday,\n        pm.xclass,\n        pm.height AS player_height,\n        pm.weight AS player_weight,\n        tp.category_id,\n        cm.category_nm,\n        tp.entry_date,\n        tp.status\n    FROM\n        public.tournament_participant tp\n    JOIN\n        public.tournament_m tm ON tp.tournament_id = tm.tournament_id\n    JOIN\n        public.category_m cm ON tp.category_id = cm.category_id\n    JOIN\n        public.player_m pm ON tp.player_id = pm.player_id AND tp.branch_id = pm.branch_id\n    JOIN\n        public.branch_m bm ON pm.branch_id = bm.branch_id\n    ${whereClause}\n    ORDER BY\n        tp.tournament_id, tp.category_id, pm.familyname, pm.firstname;\n`;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 370,
+        "y": 100,
+        "wires": [
+            [
+                "6d829a32872255b1"
+            ]
+        ]
+    },
+    {
+        "id": "6d829a32872255b1",
+        "type": "postgresql",
+        "z": "9d8a9a504f2add4b",
+        "name": "Select Tournament Participants",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 630,
+        "y": 100,
+        "wires": [
+            [
+                "43ba84aaf050dba7"
+            ]
+        ]
+    },
+    {
+        "id": "ff510ecf01a4a9b9",
+        "type": "http in",
+        "z": "9d8a9a504f2add4b",
+        "name": "POST /tournament-participants",
+        "url": "/tournament-participants",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 130,
+        "y": 200,
+        "wires": [
+            [
+                "90c41eaab97229f0"
+            ]
+        ]
+    },
+    {
+        "id": "90c41eaab97229f0",
+        "type": "function",
+        "z": "9d8a9a504f2add4b",
+        "name": "Prepare Insert Query",
+        "func": "const { tournament_id, player_id, branch_id, category_id, status } = msg.payload;\n\nif (!tournament_id || !player_id || !branch_id || !category_id || !status) {\n    node.warn(\"Missing required fields for insert.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"tournament_id, player_id, branch_id, category_id, status are required.\" };\n    return [null, msg];\n}\n\nmsg.query = `INSERT INTO public.tournament_participant (\n    tournament_id, player_id, branch_id, category_id, status\n) VALUES (\n    '${tournament_id}', '${player_id}', '${branch_id}', '${category_id}', '${status}'\n)`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 200,
+        "wires": [
+            [
+                "89d90a14249231ef"
+            ],
+            [
+                "43ba84aaf050dba7"
+            ]
+        ]
+    },
+    {
+        "id": "89d90a14249231ef",
+        "type": "postgresql",
+        "z": "9d8a9a504f2add4b",
+        "name": "Insert Tournament Participant",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 640,
+        "y": 200,
+        "wires": [
+            [
+                "9309d0f10a50537e"
+            ]
+        ]
+    },
+    {
+        "id": "9309d0f10a50537e",
+        "type": "function",
+        "z": "9d8a9a504f2add4b",
+        "name": "Set Success Response",
+        "func": "msg.statusCode = 201;\nmsg.payload = { message: \"Tournament participant created successfully.\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 890,
+        "y": 200,
+        "wires": [
+            [
+                "43ba84aaf050dba7"
+            ]
+        ]
+    },
+    {
+        "id": "e2009e9d74409d94",
+        "type": "http in",
+        "z": "9d8a9a504f2add4b",
+        "name": "PUT /tournament-participants/:tid/:pid/:bid/:cid",
+        "url": "/tournament-participants/:tid/:pid/:bid/:cid",
+        "method": "put",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 170,
+        "y": 300,
+        "wires": [
+            [
+                "5e902363227c5718"
+            ]
+        ]
+    },
+    {
+        "id": "5e902363227c5718",
+        "type": "function",
+        "z": "9d8a9a504f2add4b",
+        "name": "Prepare Update Query",
+        "func": "const { tid, pid, bid, cid } = msg.req.params;\nconst { status } = msg.payload;\n\nif (!status) {\n    node.warn(\"Missing status for update.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"Status is required for update.\" };\n    return [null, msg];\n}\n\nmsg.query = `UPDATE public.tournament_participant SET status = '${status}' WHERE tournament_id = '${tid}' AND player_id = '${pid}' AND branch_id = '${bid}' AND category_id = '${cid}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 460,
+        "y": 300,
+        "wires": [
+            [
+                "7cc419f528395dbd"
+            ],
+            [
+                "43ba84aaf050dba7"
+            ]
+        ]
+    },
+    {
+        "id": "7cc419f528395dbd",
+        "type": "postgresql",
+        "z": "9d8a9a504f2add4b",
+        "name": "Update Tournament Participant",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 730,
+        "y": 300,
+        "wires": [
+            [
+                "ad16158192d8207a"
+            ]
+        ]
+    },
+    {
+        "id": "ad16158192d8207a",
+        "type": "function",
+        "z": "9d8a9a504f2add4b",
+        "name": "Set Update Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Tournament participant not found.\" };\n} else {\n    msg.statusCode = 200;\n    msg.payload = { message: \"Tournament participant updated successfully.\" };\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 980,
+        "y": 300,
+        "wires": [
+            [
+                "43ba84aaf050dba7"
+            ]
+        ]
+    },
+    {
+        "id": "b14c175fe37bdca7",
+        "type": "http in",
+        "z": "9d8a9a504f2add4b",
+        "name": "DELETE /tournament-participants/:tid/:cid/:pid/:bid",
+        "url": "/tournament-participants/:tid/:cid/:pid/:bid",
+        "method": "delete",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 180,
+        "y": 400,
+        "wires": [
+            [
+                "067c7c34755cfa7f"
+            ]
+        ]
+    },
+    {
+        "id": "067c7c34755cfa7f",
+        "type": "function",
+        "z": "9d8a9a504f2add4b",
+        "name": "Prepare Delete Query",
+        "func": "const { tid, cid, pid, bid } = msg.req.params;\nif (!tid || !cid || !pid || !bid) {\n    node.warn(\"Missing parameters for delete.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"tournament_id, category_id, player_id, branch_id are required.\" };\n    return [null, msg];\n}\nmsg.query = `DELETE FROM public.tournament_participant WHERE tournament_id = '${tid}' AND category_id = '${cid}' AND player_id = '${pid}' AND branch_id = '${bid}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 480,
+        "y": 400,
+        "wires": [
+            [
+                "efa25da2a3fb3614"
+            ],
+            [
+                "43ba84aaf050dba7"
+            ]
+        ]
+    },
+    {
+        "id": "efa25da2a3fb3614",
+        "type": "postgresql",
+        "z": "9d8a9a504f2add4b",
+        "name": "Delete Tournament Participant",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 750,
+        "y": 400,
+        "wires": [
+            [
+                "1bf3e8723b350640"
+            ]
+        ]
+    },
+    {
+        "id": "1bf3e8723b350640",
+        "type": "function",
+        "z": "9d8a9a504f2add4b",
+        "name": "Set Delete Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Tournament participant not found.\" };\n} else {\n    msg.statusCode = 204; // No Content for successful delete\n    msg.payload = {};\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1000,
+        "y": 400,
+        "wires": [
+            [
+                "43ba84aaf050dba7"
+            ]
+        ]
+    },
+    {
+        "id": "d54a5fa3f01ca3a1",
+        "type": "http in",
+        "z": "9d8a9a504f2add4b",
+        "name": "GET /tournament-participants-detail/:tid/:cid",
+        "url": "/tournament-participants-detail/:tid/:cid",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 160,
+        "y": 500,
+        "wires": [
+            [
+                "2df5bd029f7d323d"
+            ]
+        ]
+    },
+    {
+        "id": "2df5bd029f7d323d",
+        "type": "function",
+        "z": "9d8a9a504f2add4b",
+        "name": "Prepare Select Detail Query",
+        "func": "const { tid, cid } = msg.req.params;\nif (!tid || !cid) {\n    msg.statusCode = 400;\n    msg.payload = { error: \"Tournament ID and Category ID are required.\" };\n    return [null, msg];\n}\n\nmsg.query = `\n    SELECT\n        tp.tournament_id,\n        tp.player_id,\n        tp.branch_id,\n        tp.category_id,\n        tp.entry_date,\n        tp.status,\n        pm.familyname,\n        pm.firstname,\n        pm.familyname2,\n        pm.firstname2,\n        pm.sex,\n        pm.birthday,\n        pm.admissionday,\n        pm.xclass,\n        pm.height,\n        pm.weight,\n        bm.branch_nm\n    FROM\n        public.tournament_participant tp\n    JOIN\n        public.player_m pm ON tp.player_id = pm.player_id AND tp.branch_id = pm.branch_id\n    JOIN\n        public.branch_m bm ON pm.branch_id = bm.branch_id\n    WHERE\n        tp.tournament_id = '${tid}' AND tp.category_id = '${cid}'\n    ORDER BY\n        pm.familyname, pm.firstname;\n`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 460,
+        "y": 500,
+        "wires": [
+            [
+                "8856ce140a4395de"
+            ],
+            [
+                "43ba84aaf050dba7"
+            ]
+        ]
+    },
+    {
+        "id": "8856ce140a4395de",
+        "type": "postgresql",
+        "z": "9d8a9a504f2add4b",
+        "name": "Select Detail Participants",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 730,
+        "y": 500,
+        "wires": [
+            [
+                "954b23724959d85b"
+            ]
+        ]
+    },
+    {
+        "id": "954b23724959d85b",
+        "type": "function",
+        "z": "9d8a9a504f2add4b",
+        "name": "Set Response",
+        "func": "msg.statusCode = 200;\nmsg.payload = msg.payload;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 940,
+        "y": 500,
+        "wires": [
+            [
+                "43ba84aaf050dba7"
+            ]
+        ]
+    },
+    {
+        "id": "43ba84aaf050dba7",
+        "type": "http response",
+        "z": "9d8a9a504f2add4b",
+        "name": "Send Response",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1100,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "m001",
+        "type": "http in",
+        "z": "match_flow",
+        "name": "GET /matches",
+        "url": "/matches",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 100,
+        "wires": [
+            [
+                "m002"
+            ]
+        ]
+    },
+    {
+        "id": "m002",
+        "type": "function",
+        "z": "match_flow",
+        "name": "Prepare Select All Query",
+        "func": "const tournamentId = msg.req.query.tournament_id;\nconst categoryId = msg.req.query.category_id;\nconst matchType = msg.req.query.match_type;\n\nlet whereClause = 'WHERE 1=1';\n\nif (tournamentId) {\n    whereClause += ` AND m.tournament_id = '${tournamentId}'`;\n}\nif (categoryId) {\n    whereClause += ` AND m.category_id = '${categoryId}'`;\n}\nif (matchType) {\n    whereClause += ` AND m.match_type = '${matchType}'`;\n}\n\n// match_m (m) と関連テーブルを結合して詳細情報を取得\nmsg.query = `\n    SELECT\n        m.match_id,\n        m.tournament_id,\n        tm.tournament_nm,\n        m.category_id,\n        cm.category_nm,\n        m.match_type,\n        m.match_number,\n        m.round_number,\n        m.group_name,\n        m.player1_id,\n        m.player1_branch_id,\n        pm1.familyname AS player1_familyname,\n        pm1.firstname AS player1_firstname,\n        bm1.branch_nm AS player1_branch_nm,\n        pm1.xclass AS player1_xclass, -- ★追加: player1_xclass を選択\n        m.player2_id,\n        m.player2_branch_id,\n        pm2.familyname AS player2_familyname,\n        pm2.firstname AS player2_firstname,\n        bm2.branch_nm AS player2_branch_nm,\n        pm2.xclass AS player2_xclass, -- ★追加: player2_xclass を選択\n        m.winner_player_id,\n        m.winner_branch_id,\n        m.match_date,\n        m.match_time,\n        m.venue_id,\n        vm.venue_nm,\n        m.coat_number,\n        m.score_details,\n        m.match_status,\n        m.remarks,\n        m.created_at,\n        m.updated_at\n    FROM\n        public.match_m m\n    JOIN\n        public.tournament_m tm ON m.tournament_id = tm.tournament_id\n    JOIN\n        public.category_m cm ON m.category_id = cm.category_id\n    JOIN\n        public.player_m pm1 ON m.player1_id = pm1.player_id AND m.player1_branch_id = pm1.branch_id\n    LEFT JOIN\n        public.player_m pm2 ON m.player2_id = pm2.player_id AND m.player2_branch_id = pm2.branch_id\n    LEFT JOIN\n        public.branch_m bm1 ON pm1.branch_id = bm1.branch_id\n    LEFT JOIN\n        public.branch_m bm2 ON pm2.branch_id = bm2.branch_id\n    LEFT JOIN\n        public.venue_m vm ON m.venue_id = vm.venue_id\n    ${whereClause}\n    ORDER BY\n        m.tournament_id, m.category_id, m.round_number, m.match_number;\n`;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 100,
+        "wires": [
+            [
+                "m003"
+            ]
+        ]
+    },
+    {
+        "id": "m003",
+        "type": "postgresql",
+        "z": "match_flow",
+        "name": "Select Matches",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 100,
+        "wires": [
+            [
+                "m999"
+            ]
+        ]
+    },
+    {
+        "id": "m004",
+        "type": "http in",
+        "z": "match_flow",
+        "name": "POST /matches",
+        "url": "/matches",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 200,
+        "wires": [
+            [
+                "m005"
+            ]
+        ]
+    },
+    {
+        "id": "m005",
+        "type": "function",
+        "z": "match_flow",
+        "name": "Prepare Insert Query",
+        "func": "const { match_id, tournament_id, category_id, match_type, match_number, round_number, group_name, player1_id, player1_branch_id, player2_id, player2_branch_id, match_date, match_time, venue_id, coat_number, score_details, match_status, remarks } = msg.payload;\n\n// UUID v4を生成するヘルパー関数\nfunction generateUuidV4() {\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {\n    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);\n    return v.toString(16);\n  });\n}\n\n// match_idが提供されていない場合は生成\nconst newMatchId = match_id || generateUuidV4();\n\nif (!newMatchId || !tournament_id || !category_id || !match_type || match_number === undefined || !player1_id || !player1_branch_id) {\n    node.warn(\"Missing required fields for insert.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"match_id, tournament_id, category_id, match_type, match_number, player1_id, player1_branch_id are required.\" };\n    return [null, msg];\n}\n\n// Nullable fields\nconst roundNumberVal = round_number !== undefined && round_number !== null ? round_number : 'NULL';\nconst groupNameVal = group_name ? `'${group_name}'` : 'NULL';\nconst player2IdVal = player2_id ? `'${player2_id}'` : 'NULL';\nconst player2BranchIdVal = player2_branch_id ? `'${player2_branch_id}'` : 'NULL';\nconst matchDateVal = match_date ? `'${match_date}'` : 'NULL';\nconst matchTimeVal = match_time ? `'${match_time}'` : 'NULL';\nconst venueIdVal = venue_id ? `'${venue_id}'` : 'NULL';\nconst coatNumberVal = coat_number !== undefined && coat_number !== null ? coat_number : 'NULL';\nconst scoreDetailsVal = score_details ? `'${score_details}'` : 'NULL';\nconst matchStatusVal = match_status ? `'${match_status}'` : `'scheduled'`;\nconst remarksVal = remarks ? `'${remarks}'` : 'NULL';\n\nmsg.query = `INSERT INTO public.match_m (\n    match_id, tournament_id, category_id, match_type, match_number, round_number, group_name,\n    player1_id, player1_branch_id, player2_id, player2_branch_id,\n    match_date, match_time, venue_id, coat_number, score_details, match_status, remarks\n) VALUES (\n    '${newMatchId}', '${tournament_id}', '${category_id}', '${match_type}', ${match_number}, ${roundNumberVal}, ${groupNameVal},\n    '${player1_id}', '${player1_branch_id}', ${player2IdVal}, ${player2BranchIdVal},\n    ${matchDateVal}, ${matchTimeVal}, ${venueIdVal}, ${coatNumberVal}, ${scoreDetailsVal}, ${matchStatusVal}, ${remarksVal}\n)`;\n\nmsg.payload = { match_id: newMatchId }; // レスポンスで生成されたIDを返す\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 200,
+        "wires": [
+            [
+                "m006"
+            ],
+            [
+                "m999"
+            ]
+        ]
+    },
+    {
+        "id": "m006",
+        "type": "postgresql",
+        "z": "match_flow",
+        "name": "Insert Match",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 200,
+        "wires": [
+            [
+                "m007"
+            ]
+        ]
+    },
+    {
+        "id": "m007",
+        "type": "function",
+        "z": "match_flow",
+        "name": "Set Success Response",
+        "func": "msg.statusCode = 201;\nmsg.payload = { message: \"Match created successfully.\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 200,
+        "wires": [
+            [
+                "m999"
+            ]
+        ]
+    },
+    {
+        "id": "m008",
+        "type": "http in",
+        "z": "match_flow",
+        "name": "PUT /matches/:match_id",
+        "url": "/matches/:match_id",
+        "method": "put",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 300,
+        "wires": [
+            [
+                "m009"
+            ]
+        ]
+    },
+    {
+        "id": "m009",
+        "type": "function",
+        "z": "match_flow",
+        "name": "Prepare Update Query",
+        "func": "const { match_id } = msg.req.params;\nconst { tournament_id, category_id, match_type, match_number, round_number, group_name, player1_id, player1_branch_id, player2_id, player2_branch_id, winner_player_id, winner_branch_id, match_date, match_time, venue_id, coat_number, score_details, match_status, remarks } = msg.payload;\n\nlet updateFields = [];\n\n// 必須フィールドは更新対象から除外するか、別途バリデーション\n// ここでは、更新可能なフィールドのみを対象とする\nif (tournament_id !== undefined) updateFields.push(`tournament_id = '${tournament_id}'`);\nif (category_id !== undefined) updateFields.push(`category_id = '${category_id}'`);\nif (match_type !== undefined) updateFields.push(`match_type = '${match_type}'`);\nif (match_number !== undefined) updateFields.push(`match_number = ${match_number}`);\nif (round_number !== undefined) updateFields.push(`round_number = ${round_number !== null ? round_number : 'NULL'}`);\nif (group_name !== undefined) updateFields.push(`group_name = ${group_name ? `'${group_name}'` : 'NULL'}`);\nif (player1_id !== undefined) updateFields.push(`player1_id = '${player1_id}'`);\nif (player1_branch_id !== undefined) updateFields.push(`player1_branch_id = '${player1_branch_id}'`);\nif (player2_id !== undefined) updateFields.push(`player2_id = ${player2_id ? `'${player2_id}'` : 'NULL'}`);\nif (player2_branch_id !== undefined) updateFields.push(`player2_branch_id = ${player2_branch_id ? `'${player2_branch_id}'` : 'NULL'}`);\nif (winner_player_id !== undefined) updateFields.push(`winner_player_id = ${winner_player_id ? `'${winner_player_id}'` : 'NULL'}`);\nif (winner_branch_id !== undefined) updateFields.push(`winner_branch_id = ${winner_branch_id ? `'${winner_branch_id}'` : 'NULL'}`);\nif (match_date !== undefined) updateFields.push(`match_date = ${match_date ? `'${match_date}'` : 'NULL'}`);\nif (match_time !== undefined) updateFields.push(`match_time = ${match_time ? `'${match_time}'` : 'NULL'}`);\nif (venue_id !== undefined) updateFields.push(`venue_id = ${venue_id ? `'${venue_id}'` : 'NULL'}`);\nif (coat_number !== undefined) updateFields.push(`coat_number = ${coat_number !== null ? coat_number : 'NULL'}`);\nif (score_details !== undefined) updateFields.push(`score_details = ${score_details ? `'${score_details}'` : 'NULL'}`);\nif (match_status !== undefined) updateFields.push(`match_status = '${match_status}'`);\nif (remarks !== undefined) updateFields.push(`remarks = ${remarks ? `'${remarks}'` : 'NULL'}`);\n\nif (updateFields.length === 0) {\n    node.warn(\"No fields to update.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"No fields provided for update.\" };\n    return [null, msg];\n}\n\nmsg.query = `UPDATE public.match_m SET ${updateFields.join(', ')} WHERE match_id = '${match_id}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 300,
+        "wires": [
+            [
+                "m010"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "m010",
+        "type": "postgresql",
+        "z": "match_flow",
+        "name": "Update Match",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 300,
+        "wires": [
+            [
+                "m011"
+            ]
+        ]
+    },
+    {
+        "id": "m011",
+        "type": "function",
+        "z": "match_flow",
+        "name": "Set Update Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Match not found.\" };\n} else {\n    msg.statusCode = 200;\n    msg.payload = { message: \"Match updated successfully.\" };\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 300,
+        "wires": [
+            [
+                "m999"
+            ]
+        ]
+    },
+    {
+        "id": "m012",
+        "type": "http in",
+        "z": "match_flow",
+        "name": "DELETE /matches/:match_id",
+        "url": "/matches/:match_id",
+        "method": "delete",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 400,
+        "wires": [
+            [
+                "m013"
+            ]
+        ]
+    },
+    {
+        "id": "m013",
+        "type": "function",
+        "z": "match_flow",
+        "name": "Prepare Delete Query",
+        "func": "const { match_id } = msg.req.params;\nif (!match_id) {\n    node.warn(\"Missing match_id for delete.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"match_id is required.\" };\n    return [null, msg];\n}\nmsg.query = `DELETE FROM public.match_m WHERE match_id = '${match_id}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 400,
+        "wires": [
+            [
+                "m014"
+            ],
+            [
+                "m999"
+            ]
+        ]
+    },
+    {
+        "id": "m014",
+        "type": "postgresql",
+        "z": "match_flow",
+        "name": "Delete Match",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 400,
+        "wires": [
+            [
+                "m015"
+            ]
+        ]
+    },
+    {
+        "id": "m015",
+        "type": "function",
+        "z": "match_flow",
+        "name": "Set Delete Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Match not found.\" };\n} else {\n    msg.statusCode = 204; // No Content for successful delete\n    msg.payload = {};\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 400,
+        "wires": [
+            [
+                "m999"
+            ]
+        ]
+    },
+    {
+        "id": "m999",
+        "type": "http response",
+        "z": "match_flow",
+        "name": "Send Response",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1100,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "a1b2c3d4e5f6g7h8",
+        "type": "http in",
+        "z": "new_flow_tab_id",
+        "name": "Save Bracket",
+        "url": "/save-bracket",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 70,
+        "y": 80,
+        "wires": [
+            [
+                "i9j0k1l2m3n4o5p6"
+            ]
+        ]
+    },
+    {
+        "id": "i9j0k1l2m3n4o5p6",
+        "type": "function",
+        "z": "new_flow_tab_id",
+        "name": "Prepare SQL Query (UPSERT)",
+        "func": "const payload = msg.payload;\nconst {bracket_id, tournament_id, category_id, bracket_data, final_winner_data} = msg.payload;\n\n// SQLインジェクションの脆弱性があるため、入力値のサニタイズを強く推奨します。\n// 特に、bracket_data と final_winner_data はJSON文字列として直接挿入されるため、\n// これらの内容が信頼できるソースからのものであることを確認してください。\n\n// ON CONFLICT (tournament_id, category_id) DO UPDATE を使用し、\n// 該当する組み合わせが存在すれば更新、なければ新規挿入します。\n// bracket_id はPRIMARY KEYなので、INSERT時のみ適用されます。\nmsg.query = `INSERT INTO tournament_brackets (\n    bracket_id,\n    tournament_id,\n    category_id,\n    bracket_data,\n    final_winner_data\n) VALUES (\n    '${bracket_id}', '${tournament_id}', '${category_id}', '${bracket_data}', '${final_winner_data}'\n)\nON CONFLICT (tournament_id, category_id) DO UPDATE SET\n    bracket_data = EXCLUDED.bracket_data,\n    final_winner_data = EXCLUDED.final_winner_data,\n    updated_at = NOW();`;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 290,
+        "y": 80,
+        "wires": [
+            [
+                "q7r8s9t0u1v2w3x4"
+            ]
+        ]
+    },
+    {
+        "id": "q7r8s9t0u1v2w3x4",
+        "type": "postgresql",
+        "z": "new_flow_tab_id",
+        "name": "PostgreSQL (Save)",
+        "query": "",
+        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 2,
+        "x": 530,
+        "y": 80,
+        "wires": [
+            [
+                "set_success_response_save"
+            ],
+            [
+                "error_handler_save_function"
+            ]
+        ]
+    },
+    {
+        "id": "set_success_response_save",
+        "type": "function",
+        "z": "new_flow_tab_id",
+        "name": "Set Success Response",
+        "func": "msg.statusCode = 200;\nmsg.payload = { success: true, message: \"トーナメント組み合わせを保存しました！\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 770,
+        "y": 60,
+        "wires": [
+            [
+                "http_response_save_success"
+            ]
+        ]
+    },
+    {
+        "id": "error_handler_save_function",
+        "type": "function",
+        "z": "new_flow_tab_id",
+        "name": "Set Error Response (Save)",
+        "func": "msg.statusCode = 500;\nmsg.payload = {\n    success: false,\n    message: \"保存中にデータベースエラーが発生しました。\",\n    error: msg.error ? msg.error.message : '不明なエラー'\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 780,
+        "y": 100,
+        "wires": [
+            [
+                "http_response_save_error"
+            ]
+        ]
+    },
+    {
+        "id": "http_response_save_success",
+        "type": "http response",
+        "z": "new_flow_tab_id",
+        "name": "HTTP Response (Save Success)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1080,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "http_response_save_error",
+        "type": "http response",
+        "z": "new_flow_tab_id",
+        "name": "HTTP Response (Save Error)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1060,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "load_http_in",
+        "type": "http in",
+        "z": "new_flow_tab_id",
+        "name": "Load Bracket",
+        "url": "/load-bracket/:tournament_id/:category_id",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 70,
+        "y": 200,
+        "wires": [
+            [
+                "load_prepare_sql"
+            ]
+        ]
+    },
+    {
+        "id": "load_prepare_sql",
+        "type": "function",
+        "z": "new_flow_tab_id",
+        "name": "Prepare Load SQL Query",
+        "func": "const tournamentId = msg.req.params.tournament_id;\nconst categoryId = msg.req.params.category_id;\n\n// tournament_idとcategory_idに基づいて最新の組み合わせを取得\n// unique_tournament_category制約があるため、ORDER BYは必須ではないが、\n// 念のためupdated_atでソートして最新のものを取得するロジックにしておく。\nmsg.query = `SELECT bracket_data, final_winner_data FROM tournament_brackets\n             WHERE tournament_id = '${tournamentId}' AND category_id = '${categoryId}'\n             ORDER BY updated_at DESC LIMIT 1;`;\n\n// msg.payload はPostgreSQLノードでパラメータとして使用されないため、ここでは設定しません。\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 270,
+        "y": 200,
+        "wires": [
+            [
+                "load_postgresql"
+            ]
+        ]
+    },
+    {
+        "id": "load_postgresql",
+        "type": "postgresql",
+        "z": "new_flow_tab_id",
+        "name": "PostgreSQL (Load)",
+        "query": "",
+        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 2,
+        "x": 490,
+        "y": 200,
+        "wires": [
+            [
+                "load_format_response"
+            ],
+            [
+                "error_handler_load_function"
+            ]
+        ]
+    },
+    {
+        "id": "load_format_response",
+        "type": "function",
+        "z": "new_flow_tab_id",
+        "name": "Format Load Response",
+        "func": "if (msg.payload && msg.payload.length > 0) {\n    // データベースから取得したJSONBデータは、Node-REDでは既にJavaScriptオブジェクトとしてパースされているはずです。\n    // しかし、Vue.jsに渡すために再度JSON文字列に変換します。\n    msg.payload = {\n        success: true,\n        bracket_data: JSON.stringify(msg.payload[0].bracket_data),\n        final_winner_data: msg.payload[0].final_winner_data ? JSON.stringify(msg.payload[0].final_winner_data) : null\n    };\n} else {\n    // データが見つからなかった場合\n    msg.statusCode = 404; // Not Found\n    msg.payload = {\n        success: false,\n        message: \"指定された大会とカテゴリーの組み合わせは見つかりませんでした。\"\n    };\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 730,
+        "y": 180,
+        "wires": [
+            [
+                "http_response_load_success"
+            ]
+        ]
+    },
+    {
+        "id": "error_handler_load_function",
+        "type": "function",
+        "z": "new_flow_tab_id",
+        "name": "Set Error Response (Load)",
+        "func": "msg.statusCode = 500;\nmsg.payload = {\n    success: false,\n    message: \"読み込み中にデータベースエラーが発生しました。\",\n    error: msg.error ? msg.error.message : '不明なエラー'\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 740,
+        "y": 220,
+        "wires": [
+            [
+                "http_response_load_error"
+            ]
+        ]
+    },
+    {
+        "id": "http_response_load_success",
+        "type": "http response",
+        "z": "new_flow_tab_id",
+        "name": "HTTP Response (Load Success)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1020,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "http_response_load_error",
+        "type": "http response",
+        "z": "new_flow_tab_id",
+        "name": "HTTP Response (Load Error)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1000,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "league_save_http_in",
+        "type": "http in",
+        "z": "456322a74f8670b8",
+        "name": "Save League Bracket",
+        "url": "/save-league-bracket",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 80,
+        "wires": [
+            [
+                "league_prepare_sql_upsert"
+            ]
+        ]
+    },
+    {
+        "id": "league_prepare_sql_upsert",
+        "type": "function",
+        "z": "456322a74f8670b8",
+        "name": "Prepare League SQL Query (UPSERT)",
+        "func": "const { tournament_id, category_id, league_data, match_results_data, standings_data } = msg.payload;\n\n// 注意: SQLインジェクションの脆弱性があるため、本番環境では必ずプリペアドステートメントを使用してください。\n// Node-REDのPostgreSQLノードがパラメータ化クエリをサポートしている場合は、そちらを使用することを強く推奨します。\n// 特にJSONBデータは、不正な文字列が含まれるとクエリが破損したり、セキュリティリスクにつながる可能性があります。\n\n// JSONBフィールドは、PostgreSQLに渡す前にJSON文字列に変換します。\nconst leagueDataJson = JSON.stringify(league_data);\nconst matchResultsDataJson = JSON.stringify(match_results_data);\nconst standingsDataJson = JSON.stringify(standings_data);\n\nmsg.query = `INSERT INTO public.league_brackets (\n    tournament_id,\n    category_id,\n    league_data,\n    match_results_data,\n    standings_data\n) VALUES (\n    '${tournament_id}', '${category_id}', '${leagueDataJson}'::jsonb, '${matchResultsDataJson}'::jsonb, '${standingsDataJson}'::jsonb\n)\nON CONFLICT (tournament_id, category_id) DO UPDATE SET\n    league_data = EXCLUDED.league_data,\n    match_results_data = EXCLUDED.match_results_data,\n    standings_data = EXCLUDED.standings_data,\n    updated_at = NOW();`;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 80,
+        "wires": [
+            [
+                "league_postgresql_save"
+            ]
+        ]
+    },
+    {
+        "id": "league_postgresql_save",
+        "type": "postgresql",
+        "z": "456322a74f8670b8",
+        "name": "PostgreSQL (League Save)",
+        "query": "",
+        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 2,
+        "x": 700,
+        "y": 80,
+        "wires": [
+            [
+                "league_set_success_response_save"
+            ],
+            [
+                "league_error_handler_save_function"
+            ]
+        ]
+    },
+    {
+        "id": "league_set_success_response_save",
+        "type": "function",
+        "z": "456322a74f8670b8",
+        "name": "Set Success Response",
+        "func": "msg.statusCode = 200;\nmsg.payload = { success: true, message: \"リーグ戦データを保存しました！\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 970,
+        "y": 60,
+        "wires": [
+            [
+                "league_http_response_save_success"
+            ]
+        ]
+    },
+    {
+        "id": "league_error_handler_save_function",
+        "type": "function",
+        "z": "456322a74f8670b8",
+        "name": "Set Error Response (Save)",
+        "func": "msg.statusCode = 500;\nmsg.payload = {\n    success: false,\n    message: \"リーグ戦データの保存中にデータベースエラーが発生しました。\",\n    error: msg.error ? msg.error.message : '不明なエラー'\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 980,
+        "y": 100,
+        "wires": [
+            [
+                "league_http_response_save_error"
+            ]
+        ]
+    },
+    {
+        "id": "league_http_response_save_success",
+        "type": "http response",
+        "z": "456322a74f8670b8",
+        "name": "HTTP Response (Save Success)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1280,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "league_http_response_save_error",
+        "type": "http response",
+        "z": "456322a74f8670b8",
+        "name": "HTTP Response (Save Error)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1260,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "league_load_http_in",
+        "type": "http in",
+        "z": "456322a74f8670b8",
+        "name": "Load League Bracket",
+        "url": "/load-league-bracket/:tournament_id/:category_id",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 240,
+        "wires": [
+            [
+                "league_prepare_sql_load"
+            ]
+        ]
+    },
+    {
+        "id": "league_prepare_sql_load",
+        "type": "function",
+        "z": "456322a74f8670b8",
+        "name": "Prepare League Load SQL Query",
+        "func": "const tournamentId = msg.req.params.tournament_id;\nconst categoryId = msg.req.params.category_id;\n\n// tournament_idとcategory_idに基づいて最新のリーグ戦データを取得\nmsg.query = `SELECT league_data, match_results_data, standings_data FROM public.league_brackets\n             WHERE tournament_id = '${tournamentId}' AND category_id = '${categoryId}'\n             ORDER BY updated_at DESC LIMIT 1;`;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 240,
+        "wires": [
+            [
+                "league_postgresql_load"
+            ]
+        ]
+    },
+    {
+        "id": "league_postgresql_load",
+        "type": "postgresql",
+        "z": "456322a74f8670b8",
+        "name": "PostgreSQL (League Load)",
+        "query": "",
+        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 2,
+        "x": 660,
+        "y": 240,
+        "wires": [
+            [
+                "league_format_load_response"
+            ],
+            [
+                "league_error_handler_load_function"
+            ]
+        ]
+    },
+    {
+        "id": "league_format_load_response",
+        "type": "function",
+        "z": "456322a74f8670b8",
+        "name": "Format League Load Response",
+        "func": "if (msg.payload && msg.payload.length > 0) {\n    // データベースから取得したJSONBデータは、Node-REDでは既にJavaScriptオブジェクトとしてパースされているはずです。\n    // しかし、Vue.jsに渡すために再度JSON文字列に変換します。\n    const data = msg.payload[0];\n    msg.payload = {\n        success: true,\n        league_data: JSON.stringify(data.league_data),\n        match_results_data: data.match_results_data ? JSON.stringify(data.match_results_data) : null,\n        standings_data: data.standings_data ? JSON.stringify(data.standings_data) : null\n    };\n} else {\n    // データが見つからなかった場合\n    msg.statusCode = 404; // Not Found\n    msg.payload = {\n        success: false,\n        message: \"指定された大会とカテゴリーのリーグ戦データは見つかりませんでした。\"\n    };\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 950,
+        "y": 220,
+        "wires": [
+            [
+                "league_http_response_load_success"
+            ]
+        ]
+    },
+    {
+        "id": "league_error_handler_load_function",
+        "type": "function",
+        "z": "456322a74f8670b8",
+        "name": "Set Error Response (Load)",
+        "func": "msg.statusCode = 500;\nmsg.payload = {\n    success: false,\n    message: \"リーグ戦データの読み込み中にデータベースエラーが発生しました。\",\n    error: msg.error ? msg.error.message : '不明なエラー'\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 940,
+        "y": 260,
+        "wires": [
+            [
+                "league_http_response_load_error"
+            ]
+        ]
+    },
+    {
+        "id": "league_http_response_load_success",
+        "type": "http response",
+        "z": "456322a74f8670b8",
+        "name": "HTTP Response (Load Success)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1260,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "league_http_response_load_error",
+        "type": "http response",
+        "z": "456322a74f8670b8",
+        "name": "HTTP Response (Load Error)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1240,
+        "y": 260,
+        "wires": []
+    }
+]

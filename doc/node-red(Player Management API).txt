@@ -1,0 +1,391 @@
+[
+    {
+        "id": "56ad11acd7070bcf",
+        "type": "tab",
+        "label": "Player Management API",
+        "disabled": false,
+        "info": "選手情報を管理するためのAPIフロー"
+    },
+    {
+        "id": "e2803475c66fbcb8",
+        "type": "http in",
+        "z": "56ad11acd7070bcf",
+        "name": "GET /players",
+        "url": "/players",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 100,
+        "wires": [
+            [
+                "63d33f351d3b58a4"
+            ]
+        ]
+    },
+    {
+        "id": "63d33f351d3b58a4",
+        "type": "function",
+        "z": "56ad11acd7070bcf",
+        "name": "Prepare Select All Query",
+        "func": "const branchId = msg.req.query.branch_id;\nlet whereClause = '';\n\nif (branchId) {\n    whereClause = `WHERE pm.branch_id = '${branchId}'`;\n}\n\n// player_m (pm) と branch_m (bm) を結合して branch_nm を取得\nmsg.query = `\n    SELECT\n        pm.player_id,\n        pm.branch_id,\n        pm.familyname,\n        pm.firstname,\n        pm.familyname2,\n        pm.firstname2,\n        pm.sex,\n        pm.birthday,\n        pm.admissionday,\n        pm.xclass,\n        pm.height,\n        pm.weight,\n        pm.remarks,\n        pm.created,\n        bm.branch_nm  -- ★追加: 支部名を取得\n    FROM\n        public.player_m pm\n    JOIN\n        public.branch_m bm ON pm.branch_id = bm.branch_id\n    ${whereClause}\n    ORDER BY\n        pm.branch_id, pm.player_id;\n`;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 100,
+        "wires": [
+            [
+                "d55fb177e9c68402"
+            ]
+        ]
+    },
+    {
+        "id": "d55fb177e9c68402",
+        "type": "postgresql",
+        "z": "56ad11acd7070bcf",
+        "name": "Select All Players",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 100,
+        "wires": [
+            [
+                "81d46e28402a2bbe"
+            ]
+        ]
+    },
+    {
+        "id": "81d46e28402a2bbe",
+        "type": "http response",
+        "z": "56ad11acd7070bcf",
+        "name": "Send Response",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1100,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "331fc7a7badfbfe3",
+        "type": "http in",
+        "z": "56ad11acd7070bcf",
+        "name": "POST /players",
+        "url": "/players",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 200,
+        "wires": [
+            [
+                "57ae25605e099780"
+            ]
+        ]
+    },
+    {
+        "id": "57ae25605e099780",
+        "type": "function",
+        "z": "56ad11acd7070bcf",
+        "name": "Prepare Insert Query",
+        "func": "// 文字列値をSQLクエリに安全に埋め込むためのヘルパー関数\n// null/undefinedの場合はNULL、空文字列の場合は''、それ以外は'値'として返す\nfunction formatSqlString(value) {\n    if (value === null || value === undefined) {\n        return 'NULL';\n    }\n    const strValue = String(value);\n    if (strValue === '') {\n        return \"''\";\n    }\n    // 文字列内のシングルクォートをエスケープ (二重にする)\n    const escapedValue = strValue.replace(/'/g, \"''\");\n    return `'${escapedValue}'`;\n}\n\nconst { player_id, branch_id, familyname, firstname, familyname2, firstname2, sex, birthday, admissionday, xclass, height, weight, remarks } = msg.payload;\n\nif (!player_id || !branch_id || !familyname || !firstname || !sex) {\n    node.warn(\"Missing required fields for insert.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"player_id, branch_id, familyname, firstname, sex are required.\" };\n    return [null, msg];\n}\n\n// 日付型はそのままフォーマット\nconst birthdayVal = birthday ? `'${birthday}'` : 'NULL';\nconst admissiondayVal = admissionday ? `'${admissionday}'` : 'NULL';\n\n// 数値型はnullでない限りそのまま、nullの場合はNULL\nconst heightVal = height !== null ? height : 'NULL';\nconst weightVal = weight !== null ? weight : 'NULL';\n\n// 各文字列フィールドをformatSqlString関数で処理\nconst familyname2Sql = formatSqlString(familyname2);\nconst firstname2Sql = formatSqlString(firstname2);\nconst xclassSql = formatSqlString(xclass);\nconst remarksSql = formatSqlString(remarks);\n\nmsg.query = `INSERT INTO public.player_m (\n    player_id, branch_id, familyname, firstname, \n    familyname2, firstname2, sex, birthday, admissionday, \n    xclass, height, weight, remarks\n) VALUES (\n    '${player_id}', '${branch_id}', '${familyname}', '${firstname}', \n    ${familyname2Sql}, ${firstname2Sql}, '${sex}', ${birthdayVal}, ${admissiondayVal}, \n    ${xclassSql}, ${heightVal}, ${weightVal}, ${remarksSql}\n)`;\n\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 200,
+        "wires": [
+            [
+                "63d061efcc867023"
+            ],
+            [
+                "81d46e28402a2bbe"
+            ]
+        ]
+    },
+    {
+        "id": "63d061efcc867023",
+        "type": "postgresql",
+        "z": "56ad11acd7070bcf",
+        "name": "Insert Player",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 200,
+        "wires": [
+            [
+                "0d3551e53a7faa97"
+            ]
+        ]
+    },
+    {
+        "id": "0d3551e53a7faa97",
+        "type": "function",
+        "z": "56ad11acd7070bcf",
+        "name": "Set Success Response",
+        "func": "msg.statusCode = 201;\nmsg.payload = { message: \"Player created successfully.\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 200,
+        "wires": [
+            [
+                "81d46e28402a2bbe"
+            ]
+        ]
+    },
+    {
+        "id": "d40bdf870d348a0d",
+        "type": "http in",
+        "z": "56ad11acd7070bcf",
+        "name": "PUT /players/:branch_id/:player_id",
+        "url": "/players/:branch_id/:player_id",
+        "method": "put",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 300,
+        "wires": [
+            [
+                "53d0952b26d41db3"
+            ]
+        ]
+    },
+    {
+        "id": "53d0952b26d41db3",
+        "type": "function",
+        "z": "56ad11acd7070bcf",
+        "name": "Prepare Update Query",
+        "func": "// 文字列値をSQLクエリに安全に埋め込むためのヘルパー関数\n// null/undefinedの場合はNULL、空文字列の場合は''、それ以外は'値'として返す\nfunction formatSqlString(value) {\n    if (value === null || value === undefined) {\n        return 'NULL';\n    }\n    const strValue = String(value);\n    if (strValue === '') {\n        return \"''\";\n    }\n    // 文字列内のシングルクォートをエスケープ (二重にする)\n    const escapedValue = strValue.replace(/'/g, \"''\");\n    return `'${escapedValue}'`;\n}\n\nconst { branch_id, player_id } = msg.req.params;\nconst { familyname, firstname, familyname2, firstname2, sex, birthday, admissionday, xclass, height, weight, remarks } = msg.payload;\n\nlet updateFields = [];\n\n// 各フィールドをformatSqlString関数で処理し、updateFieldsに追加\nif (familyname !== undefined) updateFields.push(`familyname = ${formatSqlString(familyname)}`);\nif (firstname !== undefined) updateFields.push(`firstname = ${formatSqlString(firstname)}`);\n// familyname2, firstname2, xclass, remarks も同様に修正\nif (familyname2 !== undefined) updateFields.push(`familyname2 = ${formatSqlString(familyname2)}`);\nif (firstname2 !== undefined) updateFields.push(`firstname2 = ${formatSqlString(firstname2)}`);\nif (sex !== undefined) updateFields.push(`sex = ${formatSqlString(sex)}`);\nif (birthday !== undefined) updateFields.push(`birthday = ${birthday ? `'${birthday}'` : 'NULL'}`);\nif (admissionday !== undefined) updateFields.push(`admissionday = ${admissionday ? `'${admissionday}'` : 'NULL'}`);\nif (xclass !== undefined) updateFields.push(`xclass = ${formatSqlString(xclass)}`);\nif (height !== undefined) updateFields.push(`height = ${height !== null ? height : 'NULL'}`);\nif (weight !== undefined) updateFields.push(`weight = ${weight !== null ? weight : 'NULL'}`);\nif (remarks !== undefined) updateFields.push(`remarks = ${formatSqlString(remarks)}`);\n\nif (updateFields.length === 0) {\n    node.warn(\"No fields to update.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"No fields provided for update.\" };\n    return [null, msg];\n}\n\nmsg.query = `UPDATE public.player_m SET ${updateFields.join(', ')} WHERE branch_id = '${branch_id}' AND player_id = '${player_id}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 300,
+        "wires": [
+            [
+                "70a0a7f01dfc2da2"
+            ],
+            [
+                "81d46e28402a2bbe"
+            ]
+        ]
+    },
+    {
+        "id": "70a0a7f01dfc2da2",
+        "type": "postgresql",
+        "z": "56ad11acd7070bcf",
+        "name": "Update Player",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 300,
+        "wires": [
+            [
+                "0adab08ddea77366"
+            ]
+        ]
+    },
+    {
+        "id": "0adab08ddea77366",
+        "type": "function",
+        "z": "56ad11acd7070bcf",
+        "name": "Set Update Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Player not found.\" };\n} else {\n    msg.statusCode = 200;\n    msg.payload = { message: \"Player updated successfully.\" };\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 300,
+        "wires": [
+            [
+                "81d46e28402a2bbe"
+            ]
+        ]
+    },
+    {
+        "id": "3ada68c2910f84d2",
+        "type": "http in",
+        "z": "56ad11acd7070bcf",
+        "name": "DELETE /players/:branch_id/:player_id",
+        "url": "/players/:branch_id/:player_id",
+        "method": "delete",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 400,
+        "wires": [
+            [
+                "f90c68c350efd733"
+            ]
+        ]
+    },
+    {
+        "id": "f90c68c350efd733",
+        "type": "function",
+        "z": "56ad11acd7070bcf",
+        "name": "Prepare Delete Query",
+        "func": "const { branch_id, player_id } = msg.req.params;\nif (!branch_id || !player_id) {\n    node.warn(\"Missing branch_id or player_id for delete.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"branch_id and player_id are required.\" };\n    return [null, msg];\n}\nmsg.query = `DELETE FROM public.player_m WHERE branch_id = '${branch_id}' AND player_id = '${player_id}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 400,
+        "wires": [
+            [
+                "34e898361833f42a"
+            ],
+            [
+                "81d46e28402a2bbe"
+            ]
+        ]
+    },
+    {
+        "id": "34e898361833f42a",
+        "type": "postgresql",
+        "z": "56ad11acd7070bcf",
+        "name": "Delete Player",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 400,
+        "wires": [
+            [
+                "4f03ae53d2274799"
+            ]
+        ]
+    },
+    {
+        "id": "4f03ae53d2274799",
+        "type": "function",
+        "z": "56ad11acd7070bcf",
+        "name": "Set Delete Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Player not found.\" };\n} else {\n    msg.statusCode = 204; // No Content for successful delete\n    msg.payload = {};\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 400,
+        "wires": [
+            [
+                "81d46e28402a2bbe"
+            ]
+        ]
+    },
+    {
+        "id": "f4c565813aead6d3",
+        "type": "http in",
+        "z": "56ad11acd7070bcf",
+        "name": "GET /branches",
+        "url": "/branches",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 500,
+        "wires": [
+            [
+                "9b69a48615e218cd"
+            ]
+        ]
+    },
+    {
+        "id": "9b69a48615e218cd",
+        "type": "function",
+        "z": "56ad11acd7070bcf",
+        "name": "Prepare Select Branches Query",
+        "func": "msg.query = `SELECT branch_id, branch_nm FROM public.branch_m ORDER BY branch_id`;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 500,
+        "wires": [
+            [
+                "123f2beac5a86969"
+            ]
+        ]
+    },
+    {
+        "id": "123f2beac5a86969",
+        "type": "postgresql",
+        "z": "56ad11acd7070bcf",
+        "name": "Select Branches",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 500,
+        "wires": [
+            [
+                "81d46e28402a2bbe"
+            ]
+        ]
+    },
+    {
+        "id": "aab57a20387da7cf",
+        "type": "postgreSQLConfig",
+        "name": "",
+        "host": "database",
+        "hostFieldType": "str",
+        "port": 5432,
+        "portFieldType": "num",
+        "database": "KUDO10",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": 10,
+        "maxFieldType": "num",
+        "idle": 1000,
+        "idleFieldType": "num",
+        "connectionTimeout": 10000,
+        "connectionTimeoutFieldType": "num",
+        "user": "postgres",
+        "userFieldType": "str",
+        "password": "postgres",
+        "passwordFieldType": "str"
+    }
+]

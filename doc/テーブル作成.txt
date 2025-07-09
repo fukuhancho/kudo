@@ -1,0 +1,137 @@
+支部情報
+CREATE TABLE IF NOT EXISTS public.branch_m
+(
+    branch_id text COLLATE pg_catalog."default" NOT NULL,
+    branch_nm text COLLATE pg_catalog."default",
+    branch_nm2 text COLLATE pg_catalog."default",
+    created timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT branch_m_pkey PRIMARY KEY (branch_id)
+);
+
+
+選手情報
+CREATE TABLE IF NOT EXISTS public.player_m
+(
+    branch_id text COLLATE pg_catalog."default" NOT NULL,
+    player_id text COLLATE pg_catalog."default" NOT NULL,
+    familyname text COLLATE pg_catalog."default",
+    familyname2 text COLLATE pg_catalog."default",
+    firstname text COLLATE pg_catalog."default",
+    firstname2 text COLLATE pg_catalog."default",
+    sex text COLLATE pg_catalog."default",
+    birthday text COLLATE pg_catalog."default",
+    admissionday text COLLATE pg_catalog."default",
+    xclass text COLLATE pg_catalog."default",
+    height real,
+    weight real,
+    remarks text COLLATE pg_catalog."default",
+    created timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT player_m_pkey PRIMARY KEY (branch_id, player_id)
+);
+
+会場情報
+CREATE TABLE IF NOT EXISTS public.venue_m
+(
+    venue_id text COLLATE pg_catalog."default" NOT NULL,
+    venue_nm text COLLATE pg_catalog."default",
+    remarks text COLLATE pg_catalog."default",
+    created timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT venue_m_pkey PRIMARY KEY (venue_id)
+);
+
+カテゴリ情報
+CREATE TABLE IF NOT EXISTS public.category_m
+(
+    category_id text COLLATE pg_catalog."default" NOT NULL,
+    category_nm text COLLATE pg_catalog."default",
+    age_min integer,
+    age_max integer,
+    physical_index_min real,
+    physical_index_max real,
+    sex_rule text COLLATE pg_catalog."default",
+    remarks text COLLATE pg_catalog."default",
+    created timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT category_m_pkey PRIMARY KEY (category_id)
+);
+
+大会情報
+CREATE TABLE IF NOT EXISTS public.tournament_m
+(
+    tournament_id text COLLATE pg_catalog."default" NOT NULL,
+    tournament_nm text COLLATE pg_catalog."default",
+    start_date timestamp with time zone,
+    end_date timestamp with time zone,
+    venue_id text COLLATE pg_catalog."default",
+    number_coat integer,
+    remarks text COLLATE pg_catalog."default",
+    created timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT tournament_m_pkey PRIMARY KEY (tournament_id)
+);
+
+大会カテゴリー情報
+CREATE TABLE IF NOT EXISTS public.tournament_category_map
+(
+    tournament_id text COLLATE pg_catalog."default" NOT NULL,
+    category_id text COLLATE pg_catalog."default" NOT NULL,
+    created timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT tournament_category_map_pkey PRIMARY KEY (tournament_id, category_id),
+    CONSTRAINT fk_category FOREIGN KEY (category_id)
+        REFERENCES public.category_m (category_id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_tournament FOREIGN KEY (tournament_id)
+        REFERENCES public.tournament_m (tournament_id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE CASCADE
+);
+
+大会参加者
+CREATE TABLE IF NOT EXISTS public.tournament_participant
+(
+    tournament_id text COLLATE pg_catalog."default" NOT NULL,
+    player_id text COLLATE pg_catalog."default" NOT NULL,
+    branch_id text COLLATE pg_catalog."default" NOT NULL,
+    category_id text COLLATE pg_catalog."default" NOT NULL,
+    entry_date timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    status text COLLATE pg_catalog."default" DEFAULT 'confirmed'::text,
+    CONSTRAINT tournament_participant_pkey PRIMARY KEY (tournament_id, player_id, branch_id),
+    CONSTRAINT fk_player FOREIGN KEY (branch_id, player_id)
+        REFERENCES public.player_m (branch_id, player_id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_tournament_category_map FOREIGN KEY (tournament_id, category_id)
+        REFERENCES public.tournament_category_map (tournament_id, category_id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE RESTRICT
+);
+
+トーナメント戦組み合わせ情報
+CREATE TABLE IF NOT EXISTS public.tournament_brackets
+(
+    bracket_id uuid NOT NULL,
+    tournament_id character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    category_id character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    bracket_data jsonb NOT NULL,
+    final_winner_data jsonb,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT tournament_brackets_pkey PRIMARY KEY (bracket_id),
+    CONSTRAINT unique_tournament_category UNIQUE (tournament_id, category_id)
+)
+
+リーグ戦組み合わせ情報
+CREATE TABLE IF NOT EXISTS public.league_brackets
+(
+    bracket_id uuid NOT NULL DEFAULT gen_random_uuid(),
+    tournament_id character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    category_id character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    league_data jsonb,
+    match_results_data jsonb,
+    standings_data jsonb,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now(),
+    CONSTRAINT league_brackets_pkey PRIMARY KEY (bracket_id),
+    CONSTRAINT league_brackets_tournament_id_category_id_key UNIQUE (tournament_id, category_id)
+);
+
+

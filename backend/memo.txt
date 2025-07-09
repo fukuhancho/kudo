@@ -1,0 +1,6 @@
+# バックアップをとる
+docker compose exec database pg_dumpall --clean --username postgres > backup.sql
+
+
+# バックアップファイルからリストア
+cat backup.sql | docker compose exec -T KUD10 psql --username postgres

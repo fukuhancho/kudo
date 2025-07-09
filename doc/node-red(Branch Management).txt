@@ -1,0 +1,316 @@
+[
+    {
+        "id": "a9b8c7d6e5f4g3h2i1j0",
+        "type": "tab",
+        "label": "Branch Management API",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "e0d9c8b7a6f5e4d3c2b1",
+        "type": "http in",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "GET /branches",
+        "url": "/branches",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 100,
+        "wires": [
+            [
+                "f1e2d3c4b5a6f7e8d9c0"
+            ]
+        ]
+    },
+    {
+        "id": "f1e2d3c4b5a6f7e8d9c0",
+        "type": "postgresql",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Select All Branches",
+        "query": "SELECT branch_id, branch_nm, branch_nm2, created FROM public.branch_m ORDER BY branch_id",
+        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 300,
+        "y": 100,
+        "wires": [
+            [
+                "g2h3i4j5k6l7m8n9o0p1"
+            ]
+        ]
+    },
+    {
+        "id": "g2h3i4j5k6l7m8n9o0p1",
+        "type": "http response",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Send Response",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1020,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "h3i4j5k6l7m8n9o0p1q2",
+        "type": "http in",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "POST /branches",
+        "url": "/branches",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 200,
+        "wires": [
+            [
+                "i4j5k6l7m8n9o0p1q2r3"
+            ]
+        ]
+    },
+    {
+        "id": "i4j5k6l7m8n9o0p1q2r3",
+        "type": "function",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Prepare Insert Query",
+        "func": "const { branch_id, branch_nm, branch_nm2 } = msg.payload;\nif (!branch_id || !branch_nm) {\n    node.warn(\"Missing required fields for insert.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"branch_id and branch_nm are required.\" };\n    return [null, msg];\n}\nmsg.query = `INSERT INTO public.branch_m (branch_id, branch_nm, branch_nm2) VALUES ('${branch_id}', '${branch_nm}', '${branch_nm2 || ''}')`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 200,
+        "wires": [
+            [
+                "j5k6l7m8n9o0p1q2r3s4"
+            ],
+            [
+                "g2h3i4j5k6l7m8n9o0p1"
+            ]
+        ]
+    },
+    {
+        "id": "j5k6l7m8n9o0p1q2r3s4",
+        "type": "postgresql",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Insert Branch",
+        "query": "",
+        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 570,
+        "y": 200,
+        "wires": [
+            [
+                "k6l7m8n9o0p1q2r3s4t5"
+            ]
+        ]
+    },
+    {
+        "id": "k6l7m8n9o0p1q2r3s4t5",
+        "type": "function",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Set Success Response",
+        "func": "msg.statusCode = 201;\nmsg.payload = { message: \"Branch created successfully.\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 810,
+        "y": 200,
+        "wires": [
+            [
+                "g2h3i4j5k6l7m8n9o0p1"
+            ]
+        ]
+    },
+    {
+        "id": "l7m8n9o0p1q2r3s4t5u6",
+        "type": "http in",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "PUT /branches/:branch_id",
+        "url": "/branches/:branch_id",
+        "method": "put",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 130,
+        "y": 300,
+        "wires": [
+            [
+                "m8n9o0p1q2r3s4t5u6v7"
+            ]
+        ]
+    },
+    {
+        "id": "m8n9o0p1q2r3s4t5u6v7",
+        "type": "function",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Prepare Update Query",
+        "func": "const { branch_id } = msg.req.params;\nconst { branch_nm, branch_nm2 } = msg.payload;\n\nif (!branch_nm && !branch_nm2) {\n    node.warn(\"No fields to update.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"No fields provided for update.\" };\n    return [null, msg];\n}\n\nlet updateFields = [];\nif (branch_nm !== undefined) updateFields.push(`branch_nm = '${branch_nm}'`);\nif (branch_nm2 !== undefined) updateFields.push(`branch_nm2 = '${branch_nm2}'`);\n\nif (updateFields.length === 0) {\n    node.warn(\"No valid fields to update.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"No valid fields provided for update.\" };\n    return [null, msg];\n}\n\nmsg.query = `UPDATE public.branch_m SET ${updateFields.join(', ')} WHERE branch_id = '${branch_id}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 300,
+        "wires": [
+            [
+                "n9o0p1q2r3s4t5u6v7w8"
+            ],
+            [
+                "g2h3i4j5k6l7m8n9o0p1"
+            ]
+        ]
+    },
+    {
+        "id": "n9o0p1q2r3s4t5u6v7w8",
+        "type": "postgresql",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Update Branch",
+        "query": "",
+        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 300,
+        "wires": [
+            [
+                "o0p1q2r3s4t5u6v7w8x9"
+            ]
+        ]
+    },
+    {
+        "id": "o0p1q2r3s4t5u6v7w8x9",
+        "type": "function",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Set Update Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Branch not found.\" };\n} else {\n    msg.statusCode = 200;\n    msg.payload = { message: \"Branch updated successfully.\" };\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 800,
+        "y": 300,
+        "wires": [
+            [
+                "g2h3i4j5k6l7m8n9o0p1"
+            ]
+        ]
+    },
+    {
+        "id": "p1q2r3s4t5u6v7w8x9y0",
+        "type": "http in",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "DELETE /branches/:branch_id",
+        "url": "/branches/:branch_id",
+        "method": "delete",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 140,
+        "y": 400,
+        "wires": [
+            [
+                "q2r3s4t5u6v7w8x9y0z1"
+            ]
+        ]
+    },
+    {
+        "id": "q2r3s4t5u6v7w8x9y0z1",
+        "type": "function",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Prepare Delete Query",
+        "func": "const { branch_id } = msg.req.params;\nif (!branch_id) {\n    node.warn(\"Missing branch_id for delete.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"branch_id is required.\" };\n    return [null, msg];\n}\nmsg.query = `DELETE FROM public.branch_m WHERE branch_id = '${branch_id}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 400,
+        "wires": [
+            [
+                "r3s4t5u6v7w8x9y0z1a2"
+            ],
+            [
+                "g2h3i4j5k6l7m8n9o0p1"
+            ]
+        ]
+    },
+    {
+        "id": "r3s4t5u6v7w8x9y0z1a2",
+        "type": "postgresql",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Delete Branch",
+        "query": "",
+        "postgreSQLConfig": "9a7fc5edbbe4d7c9",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 400,
+        "wires": [
+            [
+                "s4t5u6v7w8x9y0z1a2b3"
+            ]
+        ]
+    },
+    {
+        "id": "s4t5u6v7w8x9y0z1a2b3",
+        "type": "function",
+        "z": "a9b8c7d6e5f4g3h2i1j0",
+        "name": "Set Delete Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Branch not found.\" };\n} else {\n    msg.statusCode = 204; // No Content for successful delete\n    msg.payload = {};\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
+        "y": 400,
+        "wires": [
+            [
+                "g2h3i4j5k6l7m8n9o0p1"
+            ]
+        ]
+    },
+    {
+        "id": "9a7fc5edbbe4d7c9",
+        "type": "postgreSQLConfig",
+        "name": "",
+        "host": "database",
+        "hostFieldType": "str",
+        "port": 5432,
+        "portFieldType": "num",
+        "database": "KUDO10",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": 10,
+        "maxFieldType": "num",
+        "idle": 1000,
+        "idleFieldType": "num",
+        "connectionTimeout": 10000,
+        "connectionTimeoutFieldType": "num",
+        "user": "postgres",
+        "userFieldType": "str",
+        "password": "postgres",
+        "passwordFieldType": "str"
+    }
+]

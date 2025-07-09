@@ -1,0 +1,336 @@
+[
+    {
+        "id": "venue_flow",
+        "type": "tab",
+        "label": "Venue Management API",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "v001",
+        "type": "http in",
+        "z": "venue_flow",
+        "name": "GET /venues",
+        "url": "/venues",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 100,
+        "wires": [
+            [
+                "v002"
+            ]
+        ]
+    },
+    {
+        "id": "v002",
+        "type": "function",
+        "z": "venue_flow",
+        "name": "Prepare Select All Query",
+        "func": "msg.query = `SELECT venue_id, venue_nm, remarks, created FROM public.venue_m ORDER BY venue_id`;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 100,
+        "wires": [
+            [
+                "v003"
+            ]
+        ]
+    },
+    {
+        "id": "v003",
+        "type": "postgresql",
+        "z": "venue_flow",
+        "name": "Select All Venues",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 100,
+        "wires": [
+            [
+                "v999"
+            ]
+        ]
+    },
+    {
+        "id": "v004",
+        "type": "http in",
+        "z": "venue_flow",
+        "name": "POST /venues",
+        "url": "/venues",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 200,
+        "wires": [
+            [
+                "v005"
+            ]
+        ]
+    },
+    {
+        "id": "v005",
+        "type": "function",
+        "z": "venue_flow",
+        "name": "Prepare Insert Query",
+        "func": "const { venue_id, venue_nm, remarks } = msg.payload;\nif (!venue_id || !venue_nm) {\n    node.warn(\"Missing required fields for insert.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"venue_id and venue_nm are required.\" };\n    return [null, msg];\n}\nmsg.query = `INSERT INTO public.venue_m (venue_id, venue_nm, remarks) VALUES ('${venue_id}', '${venue_nm}', '${remarks || ''}')`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 200,
+        "wires": [
+            [
+                "v006"
+            ],
+            [
+                "v999"
+            ]
+        ]
+    },
+    {
+        "id": "v006",
+        "type": "postgresql",
+        "z": "venue_flow",
+        "name": "Insert Venue",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 200,
+        "wires": [
+            [
+                "v007"
+            ]
+        ]
+    },
+    {
+        "id": "v007",
+        "type": "function",
+        "z": "venue_flow",
+        "name": "Set Success Response",
+        "func": "msg.statusCode = 201;\nmsg.payload = { message: \"Venue created successfully.\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 200,
+        "wires": [
+            [
+                "v999"
+            ]
+        ]
+    },
+    {
+        "id": "v008",
+        "type": "http in",
+        "z": "venue_flow",
+        "name": "PUT /venues/:venue_id",
+        "url": "/venues/:venue_id",
+        "method": "put",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 300,
+        "wires": [
+            [
+                "v009"
+            ]
+        ]
+    },
+    {
+        "id": "v009",
+        "type": "function",
+        "z": "venue_flow",
+        "name": "Prepare Update Query",
+        "func": "const { venue_id } = msg.req.params;\nconst { venue_nm, remarks } = msg.payload;\n\nlet updateFields = [];\nif (venue_nm !== undefined) updateFields.push(`venue_nm = '${venue_nm}'`);\n// remarks が undefined でない、かつ null でない場合はクエリに含める\n// null を明示的に設定したい場合は remarks === null も含める\nif (remarks !== undefined) updateFields.push(`remarks = '${remarks || ''}'`);\n\nif (updateFields.length === 0) {\n    node.warn(\"No fields to update.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"No fields provided for update.\" };\n    return [null, msg];\n}\n\nmsg.query = `UPDATE public.venue_m SET ${updateFields.join(', ')} WHERE venue_id = '${venue_id}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 300,
+        "wires": [
+            [
+                "v010"
+            ],
+            [
+                "v999"
+            ]
+        ]
+    },
+    {
+        "id": "v010",
+        "type": "postgresql",
+        "z": "venue_flow",
+        "name": "Update Venue",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 300,
+        "wires": [
+            [
+                "v011"
+            ]
+        ]
+    },
+    {
+        "id": "v011",
+        "type": "function",
+        "z": "venue_flow",
+        "name": "Set Update Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Venue not found.\" };\n} else {\n    msg.statusCode = 200;\n    msg.payload = { message: \"Venue updated successfully.\" };\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 300,
+        "wires": [
+            [
+                "v999"
+            ]
+        ]
+    },
+    {
+        "id": "v012",
+        "type": "http in",
+        "z": "venue_flow",
+        "name": "DELETE /venues/:venue_id",
+        "url": "/venues/:venue_id",
+        "method": "delete",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 400,
+        "wires": [
+            [
+                "v013"
+            ]
+        ]
+    },
+    {
+        "id": "v013",
+        "type": "function",
+        "z": "venue_flow",
+        "name": "Prepare Delete Query",
+        "func": "const { venue_id } = msg.req.params;\nif (!venue_id) {\n    node.warn(\"Missing venue_id for delete.\");\n    msg.statusCode = 400;\n    msg.payload = { error: \"venue_id is required.\" };\n    return [null, msg];\n}\nmsg.query = `DELETE FROM public.venue_m WHERE venue_id = '${venue_id}'`;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 400,
+        "wires": [
+            [
+                "v014"
+            ],
+            [
+                "v999"
+            ]
+        ]
+    },
+    {
+        "id": "v014",
+        "type": "postgresql",
+        "z": "venue_flow",
+        "name": "Delete Venue",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 600,
+        "y": 400,
+        "wires": [
+            [
+                "v015"
+            ]
+        ]
+    },
+    {
+        "id": "v015",
+        "type": "function",
+        "z": "venue_flow",
+        "name": "Set Delete Response",
+        "func": "if (msg.payload.rowCount === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: \"Venue not found.\" };\n} else {\n    msg.statusCode = 204; // No Content for successful delete\n    msg.payload = {};\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 400,
+        "wires": [
+            [
+                "v999"
+            ]
+        ]
+    },
+    {
+        "id": "v999",
+        "type": "http response",
+        "z": "venue_flow",
+        "name": "Send Response",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1100,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "aab57a20387da7cf",
+        "type": "postgreSQLConfig",
+        "name": "",
+        "host": "database",
+        "hostFieldType": "str",
+        "port": 5432,
+        "portFieldType": "num",
+        "database": "KUDO10",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": 10,
+        "maxFieldType": "num",
+        "idle": 1000,
+        "idleFieldType": "num",
+        "connectionTimeout": 10000,
+        "connectionTimeoutFieldType": "num",
+        "user": "postgres",
+        "userFieldType": "str",
+        "password": "postgres",
+        "passwordFieldType": "str"
+    }
+]
