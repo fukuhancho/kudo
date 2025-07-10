@@ -2405,8 +2405,7 @@
         "y": 80,
         "wires": [
             [
-                "i9j0k1l2m3n4o5p6",
-                "697604f06577b013"
+                "i9j0k1l2m3n4o5p6"
             ]
         ]
     },
@@ -2426,8 +2425,7 @@
         "y": 80,
         "wires": [
             [
-                "q7r8s9t0u1v2w3x4",
-                "a523f49c112137d1"
+                "q7r8s9t0u1v2w3x4"
             ]
         ]
     },
@@ -2643,39 +2641,6 @@
         "wires": []
     },
     {
-        "id": "697604f06577b013",
-        "type": "debug",
-        "z": "new_flow_tab_id",
-        "name": "debug 1",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 220,
-        "y": 140,
-        "wires": []
-    },
-    {
-        "id": "a523f49c112137d1",
-        "type": "debug",
-        "z": "new_flow_tab_id",
-        "name": "debug 2",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "query",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 500,
-        "y": 140,
-        "wires": []
-    },
-    {
         "id": "league_save_http_in",
         "type": "http in",
         "z": "456322a74f8670b8",
@@ -2862,7 +2827,7 @@
         "type": "function",
         "z": "456322a74f8670b8",
         "name": "Format League Load Response",
-        "func": "if (msg.payload && msg.payload.length > 0) {\n    // データベースから取得したJSONBデータは、Node-REDでは既にJavaScriptオブジェクトとしてパースされているはずです。\n    // しかし、Vue.jsに渡すために再度JSON文字列に変換します。\n    const data = msg.payload[0];\n    msg.payload = {\n        success: true,\n        league_data: JSON.stringify(data.league_data),\n        match_results_data: data.match_results_data ? JSON.stringify(data.match_results_data) : null,\n        standings_data: data.standings_data ? JSON.stringify(data.standings_data) : null\n    };\n} else {\n    // データが見つからなかった場合\n    msg.statusCode = 404; // Not Found\n    msg.payload = {\n        success: false,\n        message: \"指定された大会とカテゴリーのリーグ戦データは見つかりませんでした。\"\n    };\n}\nreturn msg;",
+        "func": "if (msg.payload && msg.payload.length > 0) {\n    // データベースから取得したJSONBデータは、Node-REDでは既にJavaScriptオブジェクトとしてパースされています。\n    // Vue.js には、JavaScript オブジェクトのまま渡します。HTTP Response ノードが自動でJSON文字列に変換します。\n    const data = msg.payload[0]; // msg.payload.rows[0] の方が正確かもしれませんが、既存コードに合わせます\n    msg.payload = {\n        success: true,\n        league_data: data.league_data, // JSON.stringify を削除\n        match_results_data: data.match_results_data || null, // JSON.stringify を削除\n        standings_data: data.standings_data || null // JSON.stringify を削除\n    };\n} else {\n    // データが見つからなかった場合\n    msg.statusCode = 404; // Not Found\n    msg.payload = {\n        success: false,\n        message: \"指定された大会とカテゴリーのリーグ戦データは見つかりませんでした。\"\n    };\n}\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,

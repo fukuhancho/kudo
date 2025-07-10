@@ -4,7 +4,7 @@
       リーグ戦組み合わせ
     </v-card-title>
     <v-card-text>
-      <div v-if="selectedTournamentId && selectedCategoryId">
+      <div v-if="tournamentId && categoryId">
         <v-divider class="my-4"></v-divider>
         <h3 class="text-h6 mb-4">組み合わせ操作</h3>
         <v-row>
@@ -39,8 +39,7 @@
               color="info"
               class="ml-4"
               @click="loadLeagueMatches"
-              :disabled="loadingLoad || !selectedTournamentId || !selectedCategoryId"
-            >
+              :disabled="loadingLoad || !tournamentId || !categoryId" >
               <v-icon left>mdi-folder-open</v-icon>
               組み合わせを読み込み
             </v-btn>
@@ -134,14 +133,9 @@
         </div>
 
       </div>
-      <div v-else>
-        <p class="text-center mt-5 text-subtitle-1">リーグ戦を生成するには、登録選手が必要です。大会とカテゴリーを選択してください。</p>
-      </div>
     </v-card-text>
-
-    </v-card>
+  </v-card>
 </template>
-
 <script>
 import { ref, watch } from 'vue';
 import axios from 'axios';
@@ -199,6 +193,9 @@ export default {
       emit('show-snackbar', text, color);
     };
 
+
+
+    
     // リーグ戦組み合わせを生成する関数
     const generateLeagueMatches = () => {
       loadingGenerate.value = true;
@@ -211,6 +208,7 @@ export default {
       // 選手をシャッフルして初期表示順序を設定
       const shuffledParticipants = [...props.registeredParticipants].sort(() => 0.5 - Math.random());
       leagueParticipantsOrder.value = shuffledParticipants;
+
 
       // 個別の試合リストを生成
       const matches = [];
@@ -271,9 +269,9 @@ export default {
           bracket_id: bracketId,
           tournament_id: props.tournamentId,
           category_id: props.categoryId,
-          league_data: leagueParticipantsOrder.value, // JSオブジェクトとして送信
-          match_results_data: generatedMatches.value, // JSオブジェクトとして送信
-          standings_data: standingsData.value // JSオブジェクトとして送信
+          league_data: leagueParticipantsOrder.value ? JSON.stringify(leagueParticipantsOrder.value) : null,
+          match_results_data: generatedMatches.value ? JSON.stringify(generatedMatches.value) : null,
+          standings_data: standingsData.value ? JSON.stringify(standingsData.value) : null,
         };
 
         const response = await axios.post('http://localhost:1880/save-league-bracket', payload);
@@ -306,6 +304,11 @@ export default {
           leagueParticipantsOrder.value = JSON.parse(response.data.league_data);
           generatedMatches.value = response.data.match_results_data ? JSON.parse(response.data.match_results_data) : [];
           standingsData.value = response.data.standings_data ? JSON.parse(response.data.standings_data) : {};
+
+          //leagueParticipantsOrder.value = response.data.league_data || [];
+          //generatedMatches.value = response.data.match_results_data || [];
+          //standingsData.value = response.data.standings_data || {};
+
 
           showSnackbar('リーグ戦データを読み込みました！', 'success');
         } else {

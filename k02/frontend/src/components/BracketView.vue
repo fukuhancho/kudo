@@ -398,8 +398,8 @@ export default {
           bracket_id: bracketId,
           tournament_id: props.tournamentId,
           category_id: props.categoryId,
-          bracket_data: tournamentRounds.value, // JSオブジェクトとして送信
-          final_winner_data: finalWinner.value, // JSオブジェクトとして送信 (null の可能性も考慮)
+          bracket_data: JSON.stringify(tournamentRounds.value),
+          final_winner_data: finalWinner.value ? JSON.stringify(finalWinner.value) : null,
         };
 
         const response = await axios.post('http://localhost:1880/save-bracket', payload);
