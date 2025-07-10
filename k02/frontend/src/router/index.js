@@ -25,8 +25,6 @@ const routes = [
     name: 'create-combination',
     component: CombinationCreatorView,
   },
-  // HomeView のメニューから遷移する各機能のルート定義
-  // ここに、現在の各機能（支部、選手、審判、大会、試合記録）の画面に対応するルートを追加します
   {
     path: '/branches',
     name: 'branch-management',
@@ -66,7 +64,7 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL), // 履歴モード (通常はこれを使用)
+  history: createWebHistory(process.env.BASE_URL), 
   routes,
 });
 

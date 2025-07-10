@@ -64,6 +64,14 @@
         "env": []
     },
     {
+        "id": "e1cb6bc6b2821422",
+        "type": "tab",
+        "label": "Pentagon Bracket API",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "aab57a20387da7cf",
         "type": "postgreSQLConfig",
         "name": "",
@@ -2641,229 +2649,83 @@
         "wires": []
     },
     {
-        "id": "league_save_http_in",
+        "id": "8ff5c0bd3178176b",
         "type": "http in",
         "z": "456322a74f8670b8",
-        "name": "Save League Bracket",
-        "url": "/save-league-bracket",
-        "method": "post",
-        "upload": false,
-        "swaggerDoc": "",
-        "x": 120,
-        "y": 80,
-        "wires": [
-            [
-                "league_prepare_sql_upsert"
-            ]
-        ]
-    },
-    {
-        "id": "league_prepare_sql_upsert",
-        "type": "function",
-        "z": "456322a74f8670b8",
-        "name": "Prepare League SQL Query (UPSERT)",
-        "func": "const { tournament_id, category_id, league_data, match_results_data, standings_data } = msg.payload;\n\n// 注意: SQLインジェクションの脆弱性があるため、本番環境では必ずプリペアドステートメントを使用してください。\n// Node-REDのPostgreSQLノードがパラメータ化クエリをサポートしている場合は、そちらを使用することを強く推奨します。\n// 特にJSONBデータは、不正な文字列が含まれるとクエリが破損したり、セキュリティリスクにつながる可能性があります。\n\n// JSONBフィールドは、PostgreSQLに渡す前にJSON文字列に変換します。\nconst leagueDataJson = JSON.stringify(league_data);\nconst matchResultsDataJson = JSON.stringify(match_results_data);\nconst standingsDataJson = JSON.stringify(standings_data);\n\nmsg.query = `INSERT INTO public.league_brackets (\n    tournament_id,\n    category_id,\n    league_data,\n    match_results_data,\n    standings_data\n) VALUES (\n    '${tournament_id}', '${category_id}', '${leagueDataJson}'::jsonb, '${matchResultsDataJson}'::jsonb, '${standingsDataJson}'::jsonb\n)\nON CONFLICT (tournament_id, category_id) DO UPDATE SET\n    league_data = EXCLUDED.league_data,\n    match_results_data = EXCLUDED.match_results_data,\n    standings_data = EXCLUDED.standings_data,\n    updated_at = NOW();`;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 400,
-        "y": 80,
-        "wires": [
-            [
-                "league_postgresql_save"
-            ]
-        ]
-    },
-    {
-        "id": "league_postgresql_save",
-        "type": "postgresql",
-        "z": "456322a74f8670b8",
-        "name": "PostgreSQL (League Save)",
-        "query": "",
-        "postgreSQLConfig": "aab57a20387da7cf",
-        "split": false,
-        "rowsPerMsg": "",
-        "outputs": 2,
-        "x": 700,
-        "y": 80,
-        "wires": [
-            [
-                "league_set_success_response_save"
-            ],
-            [
-                "league_error_handler_save_function"
-            ]
-        ]
-    },
-    {
-        "id": "league_set_success_response_save",
-        "type": "function",
-        "z": "456322a74f8670b8",
-        "name": "Set Success Response",
-        "func": "msg.statusCode = 200;\nmsg.payload = { success: true, message: \"リーグ戦データを保存しました！\" };\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 970,
-        "y": 60,
-        "wires": [
-            [
-                "league_http_response_save_success"
-            ]
-        ]
-    },
-    {
-        "id": "league_error_handler_save_function",
-        "type": "function",
-        "z": "456322a74f8670b8",
-        "name": "Set Error Response (Save)",
-        "func": "msg.statusCode = 500;\nmsg.payload = {\n    success: false,\n    message: \"リーグ戦データの保存中にデータベースエラーが発生しました。\",\n    error: msg.error ? msg.error.message : '不明なエラー'\n};\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 980,
-        "y": 100,
-        "wires": [
-            [
-                "league_http_response_save_error"
-            ]
-        ]
-    },
-    {
-        "id": "league_http_response_save_success",
-        "type": "http response",
-        "z": "456322a74f8670b8",
-        "name": "HTTP Response (Save Success)",
-        "statusCode": "",
-        "headers": {
-            "Content-Type": "application/json"
-        },
-        "x": 1280,
-        "y": 60,
-        "wires": []
-    },
-    {
-        "id": "league_http_response_save_error",
-        "type": "http response",
-        "z": "456322a74f8670b8",
-        "name": "HTTP Response (Save Error)",
-        "statusCode": "",
-        "headers": {
-            "Content-Type": "application/json"
-        },
-        "x": 1260,
-        "y": 100,
-        "wires": []
-    },
-    {
-        "id": "league_load_http_in",
-        "type": "http in",
-        "z": "456322a74f8670b8",
-        "name": "Load League Bracket",
-        "url": "/load-league-bracket/:tournament_id/:category_id",
+        "name": "GET /load-pentagon-bracket/:tournamentId/:categoryId",
+        "url": "/load-pentagon-bracket/:tournamentId/:categoryId",
         "method": "get",
         "upload": false,
         "swaggerDoc": "",
-        "x": 120,
-        "y": 240,
+        "x": 200,
+        "y": 140,
         "wires": [
             [
-                "league_prepare_sql_load"
+                "180b57f41c879e41"
             ]
         ]
     },
     {
-        "id": "league_prepare_sql_load",
+        "id": "180b57f41c879e41",
         "type": "function",
         "z": "456322a74f8670b8",
-        "name": "Prepare League Load SQL Query",
-        "func": "const tournamentId = msg.req.params.tournament_id;\nconst categoryId = msg.req.params.category_id;\n\n// tournament_idとcategory_idに基づいて最新のリーグ戦データを取得\nmsg.query = `SELECT league_data::json, match_results_data::json, standings_data::json FROM public.league_brackets\n             WHERE tournament_id = '${tournamentId}' AND category_id = '${categoryId}'\n             ORDER BY updated_at DESC LIMIT 1;`;\n\nreturn msg;",
+        "name": "パラメータ抽出 & クエリ生成",
+        "func": "const tournamentId = msg.req.params.tournamentId;\nconst categoryId = msg.req.params.categoryId;\n\n// SQLインジェクションのリスクを考慮し、必要であればバリデーションを追加してください。\n// ここでは文字列として直接埋め込みます。\nmsg.query = `SELECT\n                        bracket_id,\n                        tournament_id,\n                        category_id,\n                        pentagon_participants_order,\n                        initial_matches,\n                        additional_matches,\n                        standings_data\n                     FROM pentagon_brackets\n                     WHERE tournament_id = '${tournamentId}' AND category_id = '${categoryId}'\n                     ORDER BY updated_at DESC\n                     LIMIT 1;`;\n\nmsg.payload = []; // パラメータを渡さないため空に\n\nreturn msg;",
         "outputs": 1,
-        "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 380,
-        "y": 240,
+        "x": 550,
+        "y": 140,
         "wires": [
             [
-                "league_postgresql_load"
+                "797a8b0652a153e0"
             ]
         ]
     },
     {
-        "id": "league_postgresql_load",
+        "id": "797a8b0652a153e0",
         "type": "postgresql",
         "z": "456322a74f8670b8",
-        "name": "PostgreSQL (League Load)",
-        "query": "",
+        "name": "五角形データ取得",
+        "query": "msg.query",
         "postgreSQLConfig": "aab57a20387da7cf",
         "split": false,
         "rowsPerMsg": "",
         "outputs": 2,
-        "x": 660,
-        "y": 240,
+        "x": 790,
+        "y": 140,
         "wires": [
             [
-                "league_format_load_response"
+                "113b0658e387a538"
             ],
             [
-                "league_error_handler_load_function"
+                "load_error_handler_function"
             ]
         ]
     },
     {
-        "id": "league_format_load_response",
+        "id": "113b0658e387a538",
         "type": "function",
         "z": "456322a74f8670b8",
-        "name": "Format League Load Response",
-        "func": "if (msg.payload && msg.payload.length > 0) {\n    // データベースから取得したJSONBデータは、Node-REDでは既にJavaScriptオブジェクトとしてパースされています。\n    // Vue.js には、JavaScript オブジェクトのまま渡します。HTTP Response ノードが自動でJSON文字列に変換します。\n    const data = msg.payload[0]; // msg.payload.rows[0] の方が正確かもしれませんが、既存コードに合わせます\n    msg.payload = {\n        success: true,\n        league_data: data.league_data, // JSON.stringify を削除\n        match_results_data: data.match_results_data || null, // JSON.stringify を削除\n        standings_data: data.standings_data || null // JSON.stringify を削除\n    };\n} else {\n    // データが見つからなかった場合\n    msg.statusCode = 404; // Not Found\n    msg.payload = {\n        success: false,\n        message: \"指定された大会とカテゴリーのリーグ戦データは見つかりませんでした。\"\n    };\n}\nreturn msg;",
+        "name": "データ整形＆JSONBパース",
+        "func": "if (msg.payload && msg.payload.length > 0) {\n    const data = msg.payload[0];\n\n    // PostgreSQLノードがJSONBを自動パースするか不明なため、文字列の場合のみJSON.parse()を実行\n    const parseJsonb = (val) => {\n        if (typeof val === 'string') {\n            try { return JSON.parse(val); } catch (e) { return val; }\n        } else {\n            return val; // 既にオブジェクトの場合はそのまま返す\n        }\n    };\n\n    msg.payload = {\n        success: true,\n        pentagon_participants_order: parseJsonb(data.pentagon_participants_order) || [],\n        initial_matches: parseJsonb(data.initial_matches) || [],\n        additional_matches: parseJsonb(data.additional_matches) || [],\n        standings_data: parseJsonb(data.standings_data) || {}\n    };\n} else {\n    // データが見つからなかった場合\n    msg.statusCode = 404;\n    msg.payload = {\n        success: false,\n        message: \"指定された大会とカテゴリーの五角形戦データは見つかりませんでした。\"\n    };\n}\nreturn msg;",
         "outputs": 1,
-        "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 950,
-        "y": 220,
+        "x": 1040,
+        "y": 120,
         "wires": [
             [
-                "league_http_response_load_success"
+                "1edba9015c39ddd7"
             ]
         ]
     },
     {
-        "id": "league_error_handler_load_function",
-        "type": "function",
-        "z": "456322a74f8670b8",
-        "name": "Set Error Response (Load)",
-        "func": "msg.statusCode = 500;\nmsg.payload = {\n    success: false,\n    message: \"リーグ戦データの読み込み中にデータベースエラーが発生しました。\",\n    error: msg.error ? msg.error.message : '不明なエラー'\n};\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 940,
-        "y": 260,
-        "wires": [
-            [
-                "league_http_response_load_error"
-            ]
-        ]
-    },
-    {
-        "id": "league_http_response_load_success",
+        "id": "1edba9015c39ddd7",
         "type": "http response",
         "z": "456322a74f8670b8",
         "name": "HTTP Response (Load Success)",
@@ -2871,12 +2733,31 @@
         "headers": {
             "Content-Type": "application/json"
         },
-        "x": 1260,
-        "y": 220,
+        "x": 1320,
+        "y": 120,
         "wires": []
     },
     {
-        "id": "league_http_response_load_error",
+        "id": "load_error_handler_function",
+        "type": "function",
+        "z": "456322a74f8670b8",
+        "name": "Set Error Response (Load)",
+        "func": "msg.statusCode = 500;\nmsg.payload = {\n    success: false,\n    message: \"五角形戦データの読み込み中にデータベースエラーが発生しました。\",\n    error: msg.error ? msg.error.message : '不明なエラー'\n};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1040,
+        "y": 160,
+        "wires": [
+            [
+                "load_http_response_error"
+            ]
+        ]
+    },
+    {
+        "id": "load_http_response_error",
         "type": "http response",
         "z": "456322a74f8670b8",
         "name": "HTTP Response (Load Error)",
@@ -2884,8 +2765,336 @@
         "headers": {
             "Content-Type": "application/json"
         },
-        "x": 1240,
-        "y": 260,
+        "x": 1300,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "c8af016d2bbcb453",
+        "type": "http in",
+        "z": "456322a74f8670b8",
+        "name": "POST /save-pentagon-bracket",
+        "url": "/save-pentagon-bracket",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 320,
+        "wires": [
+            [
+                "7b2cf1d30ed01cc7"
+            ]
+        ]
+    },
+    {
+        "id": "7b2cf1d30ed01cc7",
+        "type": "function",
+        "z": "456322a74f8670b8",
+        "name": "Prepare Pentagon SQL Query (UPSERT)",
+        "func": "const { tournament_id, category_id, pentagon_participants_order, initial_matches, additional_matches, standings_data } = msg.payload;\n\n// 必須データのチェック\nif (!tournament_id || !category_id || !pentagon_participants_order || !initial_matches) {\n    msg.statusCode = 400;\n    msg.payload = {\n        success: false,\n        message: \"必要なデータが不足しています: tournament_id, category_id, pentagon_participants_order, initial_matches は必須です。\"\n    };\n    return msg;\n}\n\n// JSONBフィールドは、PostgreSQLに渡す前にJSON文字列に変換します。\n// SQL文に直接埋め込む形式なので、シングルクォートで囲み、'::jsonb'でキャスト\nconst pentagonParticipantsOrderJson = JSON.stringify(pentagon_participants_order);\nconst initialMatchesJson = JSON.stringify(initial_matches);\nconst additionalMatchesJson = JSON.stringify(additional_matches || []); // なければ空配列\nconst standingsDataJson = JSON.stringify(standings_data || {});     // なければ空オブジェクト\n\nmsg.query = `INSERT INTO pentagon_brackets (\n    tournament_id,\n    category_id,\n    pentagon_participants_order,\n    initial_matches,\n    additional_matches,\n    standings_data\n) VALUES (\n    '${tournament_id}', \n    '${category_id}', \n    '${pentagonParticipantsOrderJson}'::jsonb, \n    '${initialMatchesJson}'::jsonb, \n    '${additionalMatchesJson}'::jsonb, \n    '${standingsDataJson}'::jsonb\n)\nON CONFLICT (tournament_id, category_id) DO UPDATE SET\n    pentagon_participants_order = EXCLUDED.pentagon_participants_order,\n    initial_matches = EXCLUDED.initial_matches,\n    additional_matches = EXCLUDED.additional_matches,\n    standings_data = EXCLUDED.standings_data,\n    updated_at = NOW()\nRETURNING bracket_id;`; // 更新または挿入されたIDを返す\n\nmsg.payload = {}; // パラメータを渡さないため空に\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 320,
+        "wires": [
+            [
+                "a4707083a4a54912"
+            ]
+        ]
+    },
+    {
+        "id": "a4707083a4a54912",
+        "type": "postgresql",
+        "z": "456322a74f8670b8",
+        "name": "五角形データ保存/更新 (UPSERT)",
+        "query": "msg.query",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 2,
+        "x": 740,
+        "y": 320,
+        "wires": [
+            [
+                "save_set_success_response"
+            ],
+            [
+                "save_error_handler_function"
+            ]
+        ]
+    },
+    {
+        "id": "save_set_success_response",
+        "type": "function",
+        "z": "456322a74f8670b8",
+        "name": "Set Success Response (Save)",
+        "func": "msg.statusCode = 200;\nmsg.payload = { success: true, message: \"五角形戦データを保存しました！\" };\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1050,
+        "y": 300,
+        "wires": [
+            [
+                "save_http_response_success"
+            ]
+        ]
+    },
+    {
+        "id": "save_error_handler_function",
+        "type": "function",
+        "z": "456322a74f8670b8",
+        "name": "Set Error Response (Save)",
+        "func": "msg.statusCode = 500;\nmsg.payload = {\n    success: false,\n    message: \"五角形戦データの保存中にデータベースエラーが発生しました。\",\n    error: msg.error ? msg.error.message : '不明なエラー'\n};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1040,
+        "y": 340,
+        "wires": [
+            [
+                "save_http_response_error"
+            ]
+        ]
+    },
+    {
+        "id": "save_http_response_success",
+        "type": "http response",
+        "z": "456322a74f8670b8",
+        "name": "HTTP Response (Save Success)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1340,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "save_http_response_error",
+        "type": "http response",
+        "z": "456322a74f8670b8",
+        "name": "HTTP Response (Save Error)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1300,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "e4a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6",
+        "type": "http in",
+        "z": "e1cb6bc6b2821422",
+        "name": "GET /load-pentagon-bracket/:tournamentId/:categoryId",
+        "url": "/load-pentagon-bracket/:tournamentId/:categoryId",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 220,
+        "y": 100,
+        "wires": [
+            [
+                "f1e2d3c4b5a69876543210fedcba9876"
+            ]
+        ]
+    },
+    {
+        "id": "f1e2d3c4b5a69876543210fedcba9876",
+        "type": "function",
+        "z": "e1cb6bc6b2821422",
+        "name": "パラメータ抽出 & クエリ生成",
+        "func": "const tournamentId = msg.req.params.tournamentId;\nconst categoryId = msg.req.params.categoryId;\n\n// SQLインジェクションを防ぐため、パラメータを適切にエスケープするか、\n// 完全に信頼できる入力のみを受け入れるか、事前にバリデーションを行ってください。\n// ここでは単純な文字列埋め込みを行っています。\n\nmsg.query = `SELECT\n                        bracket_id,\n                        tournament_id,\n                        category_id,\n                        pentagon_participants_order,\n                        initial_matches,\n                        additional_matches,\n                        standings_data\n                     FROM pentagon_brackets\n                     WHERE tournament_id = '${tournamentId}' AND category_id = '${categoryId}'\n                     ORDER BY updated_at DESC\n                     LIMIT 1;`;\n\n// PostgreSQLノードにパラメータを渡さないため、payloadは空に設定\nmsg.payload = [];\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 570,
+        "y": 100,
+        "wires": [
+            [
+                "d9c8b7a654321fedcba09876543210ab"
+            ]
+        ]
+    },
+    {
+        "id": "d9c8b7a654321fedcba09876543210ab",
+        "type": "postgresql",
+        "z": "e1cb6bc6b2821422",
+        "name": "五角形データ取得",
+        "query": "msg.query",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 810,
+        "y": 100,
+        "wires": [
+            [
+                "a1b2c3d4e5f67890abcdeffedcba9876"
+            ]
+        ]
+    },
+    {
+        "id": "a1b2c3d4e5f67890abcdeffedcba9876",
+        "type": "function",
+        "z": "e1cb6bc6b2821422",
+        "name": "データ整形＆JSONBパース",
+        "func": "if (msg.payload && msg.payload.length > 0) {\n    const data = msg.payload[0]; // 取得した最初の行のデータ\n\n    msg.payload = {\n        success: true,\n        pentagon_participants_order: data.pentagon_participants_order ? JSON.parse(data.pentagon_participants_order) : [],\n        initial_matches: data.initial_matches ? JSON.parse(data.initial_matches) : [],\n        additional_matches: data.additional_matches ? JSON.parse(data.additional_matches) : [],\n        standings_data: data.standings_data ? JSON.parse(data.standings_data) : {}\n    };\n} else {\n    // データが見つからなかった場合\n    msg.statusCode = 404; // HTTPステータスコードを404 (Not Found) に設定\n    msg.payload = {\n        success: false,\n        message: \"指定された大会とカテゴリーの五角形戦データは見つかりませんでした。\"\n    };\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1040,
+        "y": 100,
+        "wires": [
+            [
+                "b1a2c3d4e5f67890fedcba9876543210"
+            ]
+        ]
+    },
+    {
+        "id": "b1a2c3d4e5f67890fedcba9876543210",
+        "type": "http response",
+        "z": "e1cb6bc6b2821422",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1230,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "c0d1e2f3a4b5c6d7e8f90a1b2c3d4e5f",
+        "type": "http in",
+        "z": "e1cb6bc6b2821422",
+        "name": "POST /save-pentagon-bracket",
+        "url": "/save-pentagon-bracket",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 140,
+        "y": 220,
+        "wires": [
+            [
+                "d1c2b3a4f5e6d7c8b9a0123456789012"
+            ]
+        ]
+    },
+    {
+        "id": "d1c2b3a4f5e6d7c8b9a0123456789012",
+        "type": "function",
+        "z": "e1cb6bc6b2821422",
+        "name": "保存データ整形 & 存在チェッククエリ生成",
+        "func": "const payload = msg.payload;\n\n// 必須データのチェック\nif (!payload.tournament_id || !payload.category_id || !payload.pentagon_participants_order || !payload.initial_matches) {\n    msg.statusCode = 400; // Bad Request\n    msg.payload = {\n        success: false,\n        message: \"必要なデータが不足しています: tournament_id, category_id, pentagon_participants_order, initial_matches は必須です。\"\n    };\n    return msg; \n}\n\n// 既存の組み合わせがあるか確認するための SELECT クエリ\n// ここも直接埋め込み形式に合わせます\nmsg.query = `SELECT bracket_id FROM pentagon_brackets WHERE tournament_id = '${payload.tournament_id}' AND category_id = '${payload.category_id}';`;\n\n// SELECTクエリにはパラメータを渡さないため空の配列に\nmsg.params = []; \n\n// 後続のノードで元のペイロードを使用するため、フローコンテキストに保存\nflow.set('savePayload', payload);\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 470,
+        "y": 220,
+        "wires": [
+            [
+                "e2f3g4h5i6j7k8l9m0n1o2p3q4r5s6t7"
+            ]
+        ]
+    },
+    {
+        "id": "e2f3g4h5i6j7k8l9m0n1o2p3q4r5s6t7",
+        "type": "postgresql",
+        "z": "e1cb6bc6b2821422",
+        "name": "既存データチェック",
+        "query": "msg.query",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 780,
+        "y": 220,
+        "wires": [
+            [
+                "f3e4d5c6b7a8901234567890abcdefab"
+            ]
+        ]
+    },
+    {
+        "id": "f3e4d5c6b7a8901234567890abcdefab",
+        "type": "function",
+        "z": "e1cb6bc6b2821422",
+        "name": "Insert or Update クエリ生成",
+        "func": "const savePayload = flow.get('savePayload'); // 保存していた元のペイロードを取得\n\nif (!savePayload) {\n    msg.statusCode = 500;\n    msg.payload = { success: false, message: \"内部エラー: 保存ペイロードが見つかりません。\" };\n    return msg;\n}\n\nconst existingBracket = msg.payload; // PostgreSQLノードからのSELECT結果\n\nlet query;\nlet params;\n\nif (existingBracket && existingBracket.length > 0) {\n    // 既存の組み合わせが存在する場合 (UPDATE)\n    const bracketId = existingBracket[0].bracket_id; // 既存のbracket_idを取得\n    \n    // UPDATE文もパラメータは直接埋め込みますが、JSONB型はプレースホルダーを使います\n    // '::jsonb' キャストとともに行うため、パラメータ形式に戻します\n    query = `UPDATE pentagon_brackets SET\n                pentagon_participants_order = $1::jsonb,\n                initial_matches = $2::jsonb,\n                additional_matches = $3::jsonb,\n                standings_data = $4::jsonb\n             WHERE tournament_id = '${savePayload.tournament_id}' AND category_id = '${savePayload.category_id}'\n             RETURNING bracket_id;`; \n    \n    params = [\n        JSON.stringify(savePayload.pentagon_participants_order), // JSONBに保存するため文字列化\n        JSON.stringify(savePayload.initial_matches),\n        JSON.stringify(savePayload.additional_matches || []),\n        JSON.stringify(savePayload.standings_data || {})\n    ];\n    \n    msg.payload = { success: true, message: \"五角形戦データを更新しました。\", bracket_id: bracketId };\n} else {\n    // 既存の組み合わせが存在しない場合 (INSERT)\n    query = `INSERT INTO pentagon_brackets (\n                tournament_id,\n                category_id,\n                pentagon_participants_order,\n                initial_matches,\n                additional_matches,\n                standings_data\n             ) VALUES (\n                '${savePayload.tournament_id}', '${savePayload.category_id}', \n                $1::jsonb, $2::jsonb, $3::jsonb, $4::jsonb\n             ) RETURNING bracket_id;`;\n\n    params = [\n        JSON.stringify(savePayload.pentagon_participants_order),\n        JSON.stringify(savePayload.initial_matches),\n        JSON.stringify(savePayload.additional_matches || []),\n        JSON.stringify(savePayload.standings_data || {})\n    ];\n\n    msg.payload = { success: true, message: \"五角形戦データを保存しました。\" };\n}\n\nmsg.query = query; // PostgreSQLノードが実行するクエリ\nmsg.params = params; // PostgreSQLノードが実行するクエリのパラメータ\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1040,
+        "y": 220,
+        "wires": [
+            [
+                "g4f5e6d7c8b9a01234567890abcdefgh"
+            ]
+        ]
+    },
+    {
+        "id": "g4f5e6d7c8b9a01234567890abcdefgh",
+        "type": "postgresql",
+        "z": "e1cb6bc6b2821422",
+        "name": "五角形データ保存/更新",
+        "query": "msg.query",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 1310,
+        "y": 220,
+        "wires": [
+            [
+                "h5g6f7e8d9c0b1a234567890abcdefij"
+            ]
+        ]
+    },
+    {
+        "id": "h5g6f7e8d9c0b1a234567890abcdefij",
+        "type": "function",
+        "z": "e1cb6bc6b2821422",
+        "name": "保存完了レスポンス",
+        "func": "return msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1560,
+        "y": 220,
+        "wires": [
+            [
+                "i6h7g8f9e0d1c2b34567890abcdefkl"
+            ]
+        ]
+    },
+    {
+        "id": "i6h7g8f9e0d1c2b34567890abcdefkl",
+        "type": "http response",
+        "z": "e1cb6bc6b2821422",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1750,
+        "y": 220,
         "wires": []
     }
 ]
