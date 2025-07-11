@@ -47,6 +47,11 @@
             value="pentagon"
             :disabled="!canSelectPentagon"
           ></v-radio>
+          <v-radio
+            label="試合スケジューリング"
+            value="scheduler"
+            :disabled="!selectedTournamentId"
+          ></v-radio> <!-- ★追加 -->
         </v-radio-group>
 
         <v-divider class="my-4"></v-divider>
@@ -75,6 +80,13 @@
             @show-snackbar="showSnackbar"
           />
         </div>
+        <div v-else-if="selectedCombinationType === 'scheduler'"> <!-- ★追加 -->
+          <MatchSchedulerView
+            :tournament-id="selectedTournamentId"
+            :category-id="selectedCategoryId"
+            @show-snackbar="showSnackbar"
+          />
+        </div>
         <div v-else>
           <p class="text-center mt-5 text-subtitle-1">組み合わせ形式を選択してください。</p>
         </div>
@@ -100,18 +112,18 @@
 import { ref, onMounted,  computed } from 'vue';
 import axios from 'axios';
 
-// 子コンポーネントをインポート (views/components どちらに置くかでパスを調整)
 import BracketView from '../components/BracketView.vue';
 import LeagueMatchView from '../components/LeagueMatchView.vue';
-import PentagonMatchView from '../components/PentagonMatchView.vue'; // 今後作成
+import PentagonMatchView from '../components/PentagonMatchView.vue';
+import MatchSchedulerView from '../components/MatchSchedulerView.vue'; // ★追加
 
 // ----- state variables -----
 const tournamentsList = ref([]);
 const categoriesList = ref([]);
-const registeredParticipants = ref([]); // 選択された大会・カテゴリーに登録済みの選手
+const registeredParticipants = ref([]);
 const selectedTournamentId = ref(null);
 const selectedCategoryId = ref(null);
-const selectedCombinationType = ref(null); // 'tournament', 'league', 'pentagon'
+const selectedCombinationType = ref(null);
 
 const snackbar = ref(false);
 const snackbarText = ref('');
@@ -121,29 +133,24 @@ const snackbarColor = ref('');
 const participantCount = computed(() => registeredParticipants.value.length);
 
 const canSelectTournament = computed(() => {
-  // トーナメント戦推奨条件: 2名または6名以上
   return participantCount.value === 2 || participantCount.value >= 6;
 });
 
 const canSelectLeague = computed(() => {
-  // リーグ戦推奨条件: 3名または4名
   return participantCount.value >= 3 && participantCount.value <= 4;
 });
 
 const canSelectPentagon = computed(() => {
-  // 五角形戦推奨条件: 5名
   return participantCount.value === 5;
 });
 
 // ----- methods -----
-// スナックバー表示 (子コンポーネントからのイベントを受け取る)
 const showSnackbar = (text, color) => {
   snackbarText.value = text;
   snackbarColor.value = color;
   snackbar.value = true;
 };
 
-// 大会リストの取得
 const fetchTournamentsList = async () => {
   try {
     const params = new URLSearchParams();
@@ -157,12 +164,11 @@ const fetchTournamentsList = async () => {
   }
 };
 
-// 選択された大会に紐付けられたカテゴリーの取得
 const fetchCategoriesList = async (tournamentId) => {
   categoriesList.value = [];
-  selectedCategoryId.value = null; // カテゴリー選択をクリア
-  registeredParticipants.value = []; // 登録済み選手もクリア
-  selectedCombinationType.value = null; // 形式選択もクリア
+  selectedCategoryId.value = null;
+  registeredParticipants.value = [];
+  selectedCombinationType.value = null;
   if (!tournamentId) return;
   try {
     const response = await axios.get(`http://localhost:1880/tournament_categories/${tournamentId}`);
@@ -173,17 +179,14 @@ const fetchCategoriesList = async (tournamentId) => {
   }
 };
 
-// 選択された大会・カテゴリーに登録済みの出場選手を取得
 const fetchRegisteredParticipants = async (tournamentId, categoryId) => {
   registeredParticipants.value = [];
-  selectedCombinationType.value = null; // 形式選択をクリア
+  selectedCombinationType.value = null;
   if (!tournamentId || !categoryId) return;
   try {
     const response = await axios.get(`http://localhost:1880/tournament-participants-detail/${tournamentId}/${categoryId}`);
     registeredParticipants.value = response.data;
 
-    // 選手数に応じて自動で形式を推奨
-    // 適切な組み合わせ形式を自動選択し、ラジオボタンを初期値に設定
     if (canSelectTournament.value) {
       selectedCombinationType.value = 'tournament';
     } else if (canSelectLeague.value) {
@@ -191,7 +194,7 @@ const fetchRegisteredParticipants = async (tournamentId, categoryId) => {
     } else if (canSelectPentagon.value) {
       selectedCombinationType.value = 'pentagon';
     } else {
-      selectedCombinationType.value = null; // 該当なし
+      selectedCombinationType.value = null;
       if (registeredParticipants.value.length > 0) {
         showSnackbar('この選手数には推奨される組み合わせ形式がありません。', 'info');
       }
@@ -203,19 +206,16 @@ const fetchRegisteredParticipants = async (tournamentId, categoryId) => {
   }
 };
 
-// 大会選択時のハンドラー
 const handleTournamentChange = async (newTournamentId) => {
-  selectedTournamentId.value = newTournamentId; // v-modelが自動で更新するが、明示的に
+  selectedTournamentId.value = newTournamentId;
   await fetchCategoriesList(newTournamentId);
 };
 
-// カテゴリー選択時のハンドラー
 const handleCategoryChange = async (newCategoryId) => {
-  selectedCategoryId.value = newCategoryId; // v-modelが自動で更新するが、明示的に
+  selectedCategoryId.value = newCategoryId;
   await fetchRegisteredParticipants(selectedTournamentId.value, newCategoryId);
 };
 
-// コンポーネントマウント時に大会リストを取得
 onMounted(() => {
   fetchTournamentsList();
 });
