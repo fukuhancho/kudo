@@ -126,6 +126,7 @@ export default {
   },
   emits: ['show-snackbar'],
   setup(props, { emit }) {
+
     const allMatches = ref([]);
     const numCourts = ref(2);
     const loadingMatches = ref(false);
@@ -151,13 +152,16 @@ export default {
     };
 
     const fetchAllMatches = async () => {
+
       if (!props.tournamentId) {
         allMatches.value = [];
         return;
       }
+
       loadingMatches.value = true;
       try {
         const response = await axios.get(`http://localhost:1880/tournament-all-matches/${props.tournamentId}`);
+        console.log('API Response received:', response.data);
         if (response.data.success) {
           allMatches.value = response.data.matches.map(match => ({
             ...match,

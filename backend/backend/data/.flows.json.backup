@@ -3163,7 +3163,8 @@
         "y": 100,
         "wires": [
             [
-                "prepare_all_matches_query"
+                "prepare_all_matches_query",
+                "e576c6d29ab35cdc"
             ]
         ]
     },
@@ -3172,15 +3173,15 @@
         "type": "function",
         "z": "match_scheduler_api_tab",
         "name": "Prepare Queries & Init Data",
-        "func": "const tournamentId = msg.req.params.tournamentId;\n\nif (!tournamentId) {\n    msg.statusCode = 400;\n    msg.payload = { success: false, message: \"Tournament ID is required.\" };\n    return [null, null, null, msg]; // Error path\n}\n\n// Initialize an object to store all matches, grouped by category for easier processing\n// and a set to collect all unique category IDs.\nmsg.allRawMatches = {}; // Stores raw matches with categoryId\nmsg.uniqueCategoryIds = new Set();\nmsg.tournamentId = tournamentId; // Store tournamentId for later use\n\n// Query for tournament_brackets\nmsg.queryTournament = `SELECT category_id, initial_matches, additional_matches FROM tournament_brackets WHERE tournament_id = '${tournamentId}';`;\n\n// Query for league_brackets\n// Assuming league_data contains a 'matches' array\nmsg.queryLeague = `SELECT category_id, league_data->'matches' as matches FROM league_brackets WHERE tournament_id = '${tournamentId}';`;\n\n// Query for pentagon_brackets\nmsg.queryPentagon = `SELECT category_id, initial_matches, additional_matches FROM pentagon_brackets WHERE tournament_id = '${tournamentId}';`;\n\n// Output 0: For tournament_brackets query\n// Output 1: For league_brackets query\n// Output 2: For pentagon_brackets query\n// Output 3: Error path\nreturn [\n    { payload: [], query: msg.queryTournament, tournamentId: tournamentId },\n    { payload: [], query: msg.queryLeague, tournamentId: tournamentId },\n    { payload: [], query: msg.queryPentagon, tournamentId: tournamentId },\n    null // No error, so null for error path\n];",
+        "func": "const tournamentId = msg.req.params.tournamentId;\n\nif (!tournamentId) {\n    // エラーパスはこれで問題なし\n    msg.statusCode = 400;\n    msg.payload = { success: false, message: \"Tournament ID is required.\" };\n    return [null, null, null, msg];\n}\n\n// flow context に設定する部分はそのまま\nmsg.allRawMatches = {};\nmsg.uniqueCategoryIds = new Set();\nmsg.tournamentId = tournamentId; // tournamentId は msg オブジェクトに保持しておくと便利\n\n// クエリ文字列を msg オブジェクトのプロパティとして設定\nmsg.queryTournament = `SELECT category_id, initial_matches, additional_matches FROM tournament_brackets WHERE tournament_id = '${tournamentId}';`;\nmsg.queryLeague = `SELECT category_id, league_data->'matches' as matches FROM league_brackets WHERE tournament_id = '${tournamentId}';`;\nmsg.queryPentagon = `SELECT category_id, initial_matches, additional_matches FROM pentagon_brackets WHERE tournament_id = '${tournamentId}';`;\n\n// ここが重要: 各出力に、msg.req と msg.res を引き継いだ元のmsgオブジェクトのコピーを渡す\n// または、元のmsgオブジェクトを直接変更し、それぞれの出力で異なるプロパティをセットする\n// 複数の出力があるため、元の msg オブジェクトを直接返すのは難しい。\n// そのため、msg のクローンを作成し、各クローンに必要なプロパティを追加して返す。\n\n// クローンメッセージを生成\nconst msgForTournament = { ...msg, query: msg.queryTournament };\nconst msgForLeague = { ...msg, query: msg.queryLeague };\nconst msgForPentagon = { ...msg, query: msg.queryPentagon };\n\n// 不要になったクエリプロパティを削除 (任意だが推奨)\ndelete msgForTournament.queryLeague;\ndelete msgForTournament.queryPentagon;\ndelete msgForLeague.queryTournament;\ndelete msgForLeague.queryPentagon;\ndelete msgForPentagon.queryTournament;\ndelete msgForPentagon.queryLeague;\n\n// 各出力ポートにメッセージを送信\nreturn [\n    msgForTournament,\n    msgForLeague,\n    msgForPentagon,\n    null // エラーパス\n];",
         "outputs": 4,
         "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 320,
-        "y": 240,
+        "x": 180,
+        "y": 260,
         "wires": [
             [
                 "query_tournament_matches"
@@ -3206,7 +3207,7 @@
         "split": false,
         "rowsPerMsg": "",
         "outputs": 2,
-        "x": 600,
+        "x": 540,
         "y": 140,
         "wires": [
             [
@@ -3266,6 +3267,7 @@
         "name": "Process Tournament Matches",
         "func": "const tournamentId = msg.tournamentId; // Retrieve tournamentId\nlet allRawMatches = flow.get('allRawMatches') || {};\nlet uniqueCategoryIds = flow.get('uniqueCategoryIds') || new Set();\n\nmsg.payload.forEach(row => {\n    const categoryId = row.category_id;\n    uniqueCategoryIds.add(categoryId);\n    \n    const initialMatches = row.initial_matches || [];\n    const additionalMatches = row.additional_matches || [];\n\n    const matches = [\n        ...initialMatches.map(m => ({ ...m, matchType: 'tournament', categoryId: categoryId, tournamentId: tournamentId, matchId: m.matchId || `tour-${categoryId}-${m.player1.player_id}-${m.player2.player_id}` })),\n        ...additionalMatches.map(m => ({ ...m, matchType: 'tournament', categoryId: categoryId, tournamentId: tournamentId, matchId: m.matchId || `tour-add-${categoryId}-${m.player1.player_id}-${m.player2.player_id}` }))\n    ];\n\n    if (!allRawMatches[categoryId]) allRawMatches[categoryId] = [];\n    allRawMatches[categoryId].push(...matches);\n});\n\nflow.set('allRawMatches', allRawMatches);\nflow.set('uniqueCategoryIds', uniqueCategoryIds);\n\nreturn msg;",
         "outputs": 1,
+        "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
@@ -3285,6 +3287,7 @@
         "name": "Process League Matches",
         "func": "const tournamentId = msg.tournamentId; // Retrieve tournamentId\nlet allRawMatches = flow.get('allRawMatches') || {};\nlet uniqueCategoryIds = flow.get('uniqueCategoryIds') || new Set();\n\nmsg.payload.forEach(row => {\n    const categoryId = row.category_id;\n    uniqueCategoryIds.add(categoryId);\n    \n    // Assuming league_data->'matches' as matches returns an array directly\n    const leagueMatches = row.matches || [];\n\n    const matches = leagueMatches.map(m => ({ ...m, matchType: 'league', categoryId: categoryId, tournamentId: tournamentId, matchId: m.matchId || `league-${categoryId}-${m.player1.player_id}-${m.player2.player_id}` }));\n\n    if (!allRawMatches[categoryId]) allRawMatches[categoryId] = [];\n    allRawMatches[categoryId].push(...matches);\n});\n\nflow.set('allRawMatches', allRawMatches);\nflow.set('uniqueCategoryIds', uniqueCategoryIds);\n\nreturn msg;",
         "outputs": 1,
+        "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
@@ -3325,9 +3328,19 @@
         "property": "payload",
         "propertyType": "msg",
         "key": "topic",
+        "joiner": "",
+        "joinerType": "str",
+        "useparts": true,
+        "accumulate": false,
+        "timeout": "",
         "count": "3",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
         "x": 1160,
-        "y": 240,
+        "y": 180,
         "wires": [
             [
                 "query_category_names"
@@ -3339,7 +3352,7 @@
         "type": "function",
         "z": "match_scheduler_api_tab",
         "name": "Prepare Category Name Query",
-        "func": "let uniqueCategoryIds = flow.get('uniqueCategoryIds') || new Set();\n\nif (uniqueCategoryIds.size === 0) {\n    // No categories found, proceed to final processing with empty category map\n    msg.query = null;\n    msg.payload = []; // Ensure payload is an empty array for postgresql node\n    return msg;\n}\n\nconst categoryIdList = Array.from(uniqueCategoryIds).map(id => `'${id}'`).join(',');\nmsg.query = `SELECT category_id, category_name FROM tournament_categories WHERE category_id IN (${categoryIdList});`;\nmsg.payload = []; // No parameters for IN clause when directly embedding\n\nreturn msg;",
+        "func": "let uniqueCategoryIds = flow.get('uniqueCategoryIds') || new Set();\n\nif (uniqueCategoryIds.size === 0) {\n    // No categories found, proceed to final processing with empty category map\n    msg.query = null;\n    msg.payload = []; // Ensure payload is an empty array for postgresql node\n    return msg;\n}\n\nconst categoryIdList = Array.from(uniqueCategoryIds).map(id => `'${id}'`).join(',');\nmsg.query = `\n    SELECT\n        tcm.category_id,\n        cm.category_nm as category_name\n    FROM\n        public.tournament_category_map tcm\n    JOIN\n        public.category_m cm ON tcm.category_id = cm.category_id\n    WHERE\n        tcm.category_id IN (${categoryIdList});\n`;\nmsg.payload = []; // No parameters for IN clause when directly embedding\n\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -3382,30 +3395,19 @@
         "name": "Consolidate & Map Categories",
         "func": "const allRawMatches = flow.get('allRawMatches') || {};\nconst categoryNames = msg.payload; // Result from Fetch Category Names query\n\nconst categoryMap = new Map();\ncategoryNames.forEach(cat => {\n    categoryMap.set(cat.category_id, cat.category_name);\n});\n\nlet finalMatches = [];\nfor (const categoryId in allRawMatches) {\n    allRawMatches[categoryId].forEach(match => {\n        finalMatches.push({\n            ...match,\n            categoryName: categoryMap.get(match.categoryId) || '不明なカテゴリ'\n        });\n    });\n}\n\n// Clear flow context variables\nflow.set('allRawMatches', null);\nflow.set('uniqueCategoryIds', null);\n\nmsg.statusCode = 200;\nmsg.payload = { success: true, matches: finalMatches };\nreturn msg;",
         "outputs": 1,
+        "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1950,
-        "y": 220,
+        "x": 1930,
+        "y": 160,
         "wires": [
             [
-                "http_response_success"
+                "3fb6c602127b7926",
+                "b52011060329ea13"
             ]
         ]
-    },
-    {
-        "id": "http_response_success",
-        "type": "http response",
-        "z": "match_scheduler_api_tab",
-        "name": "HTTP Response (Success)",
-        "statusCode": "200",
-        "headers": {
-            "Content-Type": "application/json"
-        },
-        "x": 2280,
-        "y": 180,
-        "wires": []
     },
     {
         "id": "http_response_error",
@@ -3416,8 +3418,55 @@
         "headers": {
             "Content-Type": "application/json"
         },
-        "x": 1930,
-        "y": 280,
+        "x": 1950,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "3fb6c602127b7926",
+        "type": "http response",
+        "z": "match_scheduler_api_tab",
+        "name": "HTTP Response (Success)",
+        "statusCode": "200",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 2300,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "b52011060329ea13",
+        "type": "debug",
+        "z": "match_scheduler_api_tab",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 2220,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "e576c6d29ab35cdc",
+        "type": "debug",
+        "z": "match_scheduler_api_tab",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 480,
+        "y": 60,
         "wires": []
     }
 ]
