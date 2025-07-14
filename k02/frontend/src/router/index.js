@@ -12,6 +12,7 @@ import TournamentView from '../views/TournamentView.vue';
 import CategoryView from '../views/CategoryView.vue';
 import TournamentCategoryView from '../views/TournamentCategoryView.vue';
 import TournamentParticipantView from '../views/TournamentParticipantView.vue';
+import MatchSchedulerView from '../views/MatchSchedulerView.vue'; 
 
 
 const routes = [
@@ -59,6 +60,12 @@ const routes = [
     path: '/tournament-participants',
     name: 'ttournament-participant-management',
     component: TournamentParticipantView,
+  },
+  {
+    path: '/match-scheduler/:tournamentId?', 
+    name: 'MatchScheduler',
+    component: MatchSchedulerView,
+    props: true 
   },
   
 ];

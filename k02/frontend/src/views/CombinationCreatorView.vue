@@ -47,11 +47,6 @@
             value="pentagon"
             :disabled="!canSelectPentagon"
           ></v-radio>
-          <v-radio
-            label="試合スケジューリング"
-            value="scheduler"
-            :disabled="!selectedTournamentId"
-          ></v-radio> <!-- ★追加 -->
         </v-radio-group>
 
         <v-divider class="my-4"></v-divider>
@@ -61,6 +56,7 @@
             :tournament-id="selectedTournamentId"
             :category-id="selectedCategoryId"
             :registered-participants="registeredParticipants"
+            :existing-data="existingCombinationData && selectedCombinationType === 'tournament' ? existingCombinationData : null"
             @show-snackbar="showSnackbar"
           />
         </div>
@@ -69,6 +65,7 @@
             :tournament-id="selectedTournamentId"
             :category-id="selectedCategoryId"
             :registered-participants="registeredParticipants"
+            :existing-data="existingCombinationData && selectedCombinationType === 'league' ? existingCombinationData : null"
             @show-snackbar="showSnackbar"
           />
         </div>
@@ -77,13 +74,7 @@
             :tournament-id="selectedTournamentId"
             :category-id="selectedCategoryId"
             :registered-participants="registeredParticipants"
-            @show-snackbar="showSnackbar"
-          />
-        </div>
-        <div v-else-if="selectedCombinationType === 'scheduler'"> <!-- ★追加 -->
-          <MatchSchedulerView
-            :tournament-id="selectedTournamentId"
-            :category-id="selectedCategoryId"
+            :existing-data="existingCombinationData && selectedCombinationType === 'pentagon' ? existingCombinationData : null"
             @show-snackbar="showSnackbar"
           />
         </div>
@@ -99,6 +90,21 @@
       </div>
     </v-card-text>
 
+    <v-dialog v-model="confirmChangeDialog" max-width="500">
+      <v-card>
+        <v-card-title class="headline">組み合わせ形式の変更確認</v-card-title>
+        <v-card-text>
+          選択した組み合わせ形式を変更すると、この大会のこのカテゴリーに**既存の試合データがある場合、それらは全て削除されます。**<br>
+          よろしいですか？
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="error" text @click="cancelCombinationTypeChange">キャンセル</v-btn>
+          <v-btn color="primary" @click="confirmCombinationTypeChange">変更して削除する</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="3000">
       {{ snackbarText }}
       <template v-slot:action="{ attrs }">
@@ -109,13 +115,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted,  computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
 
 import BracketView from '../components/BracketView.vue';
 import LeagueMatchView from '../components/LeagueMatchView.vue';
 import PentagonMatchView from '../components/PentagonMatchView.vue';
-import MatchSchedulerView from '../components/MatchSchedulerView.vue'; // ★追加
 
 // ----- state variables -----
 const tournamentsList = ref([]);
@@ -124,20 +129,26 @@ const registeredParticipants = ref([]);
 const selectedTournamentId = ref(null);
 const selectedCategoryId = ref(null);
 const selectedCombinationType = ref(null);
+const existingCombinationData = ref(null);
 
 const snackbar = ref(false);
 const snackbarText = ref('');
 const snackbarColor = ref('');
 
+const confirmChangeDialog = ref(false);
+const previousCombinationType = ref(null);
+// ★変更: 組み合わせ形式がプログラム的に設定中かどうかのフラグ★
+const isSettingCombinationTypeProgrammatically = ref(false); 
+
 // ----- computed properties for enabling/disabling combination type selection -----
 const participantCount = computed(() => registeredParticipants.value.length);
 
 const canSelectTournament = computed(() => {
-  return participantCount.value === 2 || participantCount.value >= 6;
+  return participantCount.value >= 2;
 });
 
 const canSelectLeague = computed(() => {
-  return participantCount.value >= 3 && participantCount.value <= 4;
+  return participantCount.value >= 2;
 });
 
 const canSelectPentagon = computed(() => {
@@ -168,7 +179,11 @@ const fetchCategoriesList = async (tournamentId) => {
   categoriesList.value = [];
   selectedCategoryId.value = null;
   registeredParticipants.value = [];
-  selectedCombinationType.value = null;
+  selectedCombinationType.value = null; // リセット
+  existingCombinationData.value = null; // リセット
+  previousCombinationType.value = null; // リセット
+  // ★追加: カテゴリー変更時にプログラム設定フラグをリセット★
+  isSettingCombinationTypeProgrammatically.value = false; 
   if (!tournamentId) return;
   try {
     const response = await axios.get(`http://localhost:1880/tournament_categories/${tournamentId}`);
@@ -181,30 +196,67 @@ const fetchCategoriesList = async (tournamentId) => {
 
 const fetchRegisteredParticipants = async (tournamentId, categoryId) => {
   registeredParticipants.value = [];
-  selectedCombinationType.value = null;
-  if (!tournamentId || !categoryId) return;
-  try {
-    const response = await axios.get(`http://localhost:1880/tournament-participants-detail/${tournamentId}/${categoryId}`);
-    registeredParticipants.value = response.data;
+  selectedCombinationType.value = null; // リセット
+  existingCombinationData.value = null; // リセット
+  previousCombinationType.value = null; // リセット
+  // ★追加: 参加者取得時にプログラム設定フラグをリセット★
+  isSettingCombinationTypeProgrammatically.value = true; // ★ここが重要: これからプログラム的に設定すると宣言★
 
-    if (canSelectTournament.value) {
-      selectedCombinationType.value = 'tournament';
-    } else if (canSelectLeague.value) {
-      selectedCombinationType.value = 'league';
-    } else if (canSelectPentagon.value) {
-      selectedCombinationType.value = 'pentagon';
+  if (!tournamentId || !categoryId) {
+    isSettingCombinationTypeProgrammatically.value = false; // パラメータがない場合は即座に解除
+    return;
+  }
+
+  try {
+    const participantsResponse = await axios.get(`http://localhost:1880/tournament-participants-detail/${tournamentId}/${categoryId}`);
+    registeredParticipants.value = participantsResponse.data;
+
+    // 既存データを読み込む試行
+    const existingDataResponse = await axios.get(`http://localhost:1880/combination_data/${tournamentId}/${categoryId}`);
+    if (existingDataResponse.data.success && existingDataResponse.data.data) {
+      selectedCombinationType.value = existingDataResponse.data.type;
+      existingCombinationData.value = existingDataResponse.data.data;
+      showSnackbar(`既存の${existingDataResponse.data.type}戦組み合わせを読み込みました。`, 'success');
     } else {
-      selectedCombinationType.value = null;
-      if (registeredParticipants.value.length > 0) {
-        showSnackbar('この選手数には推奨される組み合わせ形式がありません。', 'info');
+      // 既存データが見つからなかった場合、参加者数に応じたデフォルトをセット
+      existingCombinationData.value = null;
+      if (participantCount.value === 5) {
+        selectedCombinationType.value = 'pentagon';
+      } else if (participantCount.value >= 2) {
+        selectedCombinationType.value = 'tournament'; // デフォルトはトーナメントに設定
+      } else {
+        selectedCombinationType.value = null;
+        if (registeredParticipants.value.length > 0) {
+          showSnackbar('この選手数には推奨される組み合わせ形式がありません。', 'info');
+        }
       }
+      showSnackbar('既存の組み合わせデータは見つかりませんでした。', 'info');
     }
 
   } catch (error) {
-    console.error('Failed to fetch registered participants:', error);
-    showSnackbar('出場選手リストの取得に失敗しました', 'error');
+    console.error('Failed to fetch registered participants or existing combination data:', error);
+    if (error.response && error.response.status === 404 && error.config.url.includes('combination_data')) {
+        showSnackbar('既存の組み合わせデータは見つかりませんでした。', 'info');
+        existingCombinationData.value = null;
+        // 404の場合も、デフォルトの組み合わせ形式を設定
+        if (participantCount.value === 5) {
+          selectedCombinationType.value = 'pentagon';
+        } else if (participantCount.value >= 2) {
+          selectedCombinationType.value = 'tournament';
+        } else {
+          selectedCombinationType.value = null;
+        }
+    } else {
+        showSnackbar('出場選手リストまたは組み合わせデータの取得中にエラーが発生しました。', 'error');
+        existingCombinationData.value = null;
+        selectedCombinationType.value = null; // エラー時は選択をリセット
+    }
+  } finally {
+    // ★ここが重要: プログラム的な設定が完了したらフラグを解除★
+    isSettingCombinationTypeProgrammatically.value = false; 
   }
 };
+
 
 const handleTournamentChange = async (newTournamentId) => {
   selectedTournamentId.value = newTournamentId;
@@ -214,6 +266,68 @@ const handleTournamentChange = async (newTournamentId) => {
 const handleCategoryChange = async (newCategoryId) => {
   selectedCategoryId.value = newCategoryId;
   await fetchRegisteredParticipants(selectedTournamentId.value, newCategoryId);
+};
+
+// 組み合わせ形式変更のウォッチャーとダイアログ制御ロジック
+watch(selectedCombinationType, async (newType, oldType) => {
+  // ★変更: プログラムによる変更中はダイアログを表示しない★
+  if (isSettingCombinationTypeProgrammatically.value) {
+    previousCombinationType.value = newType; // この時点でも previous を更新
+    return;
+  }
+
+  // 初めて値がセットされた、または同一値への更新はスキップ（これは既に機能しているはず）
+  if (oldType === null || oldType === undefined || newType === oldType) {
+    previousCombinationType.value = newType;
+    return;
+  }
+
+  // ここに到達するのは、ユーザーが手動で異なる組み合わせ形式を選択した場合のみ
+  previousCombinationType.value = oldType;
+  confirmChangeDialog.value = true;
+});
+
+
+const confirmCombinationTypeChange = async () => {
+  confirmChangeDialog.value = false;
+  if (selectedTournamentId.value && selectedCategoryId.value && previousCombinationType.value) {
+    try {
+      const response = await axios.delete(
+        `http://localhost:1880/matches/${selectedTournamentId.value}/${selectedCategoryId.value}/${previousCombinationType.value}`
+      );
+      if (response.data.success) {
+        showSnackbar('既存の試合データを削除し、組み合わせ形式を変更しました。', 'success');
+        existingCombinationData.value = null;
+        // ★追加: 削除成功後、次の自動設定がwatchをトリガーしないようフラグを立てる★
+        isSettingCombinationTypeProgrammatically.value = true; 
+      } else {
+        showSnackbar('既存試合データの削除に失敗しました: ' + (response.data.message || '不明なエラー'), 'error');
+        selectedCombinationType.value = previousCombinationType.value;
+      }
+    } catch (error) {
+      console.error('Failed to delete existing matches:', error);
+      showSnackbar('既存試合データの削除中にエラーが発生しました。', 'error');
+      selectedCombinationType.value = previousCombinationType.value;
+    } finally {
+        // ★追加: エラー時でも、selectedCombinationTypeが戻された後にフラグを解除する
+        isSettingCombinationTypeProgrammatically.value = false; 
+    }
+  } else {
+    showSnackbar('必要な情報が不足しているため、既存試合データの削除をスキップしました。', 'warning');
+    selectedCombinationType.value = previousCombinationType.value;
+  }
+};
+
+const cancelCombinationTypeChange = () => {
+  // ★ここを修正: キャンセル時もプログラム設定フラグを立ててから戻す★
+  isSettingCombinationTypeProgrammatically.value = true;
+  confirmChangeDialog.value = false;
+  selectedCombinationType.value = previousCombinationType.value;
+  showSnackbar('組み合わせ形式の変更をキャンセルしました。', 'info');
+  // ★追加: 値が戻されたらフラグを解除★
+  setTimeout(() => {
+    isSettingCombinationTypeProgrammatically.value = false;
+  }, 0); // DOM更新サイクル後に解除
 };
 
 onMounted(() => {
