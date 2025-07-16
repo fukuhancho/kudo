@@ -135,7 +135,7 @@
 </template>
 
 <script>
-import { ref, watch, computed, onMounted } from 'vue'; // onMounted を追加
+import { ref, watch, computed, onMounted } from 'vue';
 import axios from 'axios';
 import draggable from 'vuedraggable';
 
@@ -145,12 +145,8 @@ export default {
     draggable,
   },
   props: {
-    // ★ここを修正: props.tournamentId は不要になるので削除またはコメントアウト★
-    // tournamentId: {
-    //   type: [String, Number],
-    //   required: false, // ルートパラメータから直接渡される場合は不要
-    //   default: null,
-    // },
+    // tournamentId prop は selectedTournamentId に置き換えられたため、削除またはコメントアウト
+    // categoryId prop は現在このコンポーネントでは直接使用されていませんが、将来的に必要になる可能性があれば残しておいてください
     categoryId: {
       type: [String, Number],
       default: null,
@@ -165,10 +161,8 @@ export default {
     const scheduledMatchesByCourt = ref({});
     const courtNames = ref([]);
 
-    // ★ここから追加★
     const tournaments = ref([]); // 大会リストを保持
     const selectedTournamentId = ref(null); // 選択された大会IDを保持
-    // ★ここまで追加★
 
     const totalMatchesCount = computed(() => {
       let count = 0;
@@ -181,7 +175,7 @@ export default {
     const getPlayerFullName = (player) => {
       if (!player) return '未定';
       const fullName = `${player.familyname || ''} ${player.firstname || ''}`;
-      return fullName.trim() || '未定';
+      return fullName || '未定'; // trim() は不要
     };
 
     const getMatchTypeLabel = (type) => {
@@ -212,11 +206,13 @@ export default {
       }
 
       if (oldMatches.length > 0) {
+        // 現在の試合を新しいコート数に再配分
         oldMatches.forEach((match, index) => {
           const targetCourtName = newCourtNames[index % numCourts.value];
           if (newScheduledMatchesByCourt[targetCourtName]) {
             newScheduledMatchesByCourt[targetCourtName].push(match);
           } else {
+            // エラーが発生した場合（numCourtsが急に減ったなど）のフォールバック
             newScheduledMatchesByCourt[newCourtNames[0]].push(match);
           }
         });
@@ -240,35 +236,36 @@ export default {
     };
 
     const fetchAllMatches = async () => {
-      // ★ここを修正: props.tournamentId ではなく selectedTournamentId を使用★
       if (!selectedTournamentId.value) { 
         allMatches.value = [];
-        initializeCourtLists();
+        initializeCourtLists(); // 大会が選択されていない場合はクリア
         return;
       }
 
       loadingMatches.value = true;
       try {
-        const response = await axios.get(`http://localhost:1880/tournament-all-matches/${selectedTournamentId.value}`); // selectedTournamentId を使用
+        const response = await axios.get(`http://localhost:1880/tournament-all-matches/${selectedTournamentId.value}`);
         if (response.data.success) {
           allMatches.value = []; 
+          // 既存のスケジュールをクリア
           for (const courtName in scheduledMatchesByCourt.value) {
             scheduledMatchesByCourt.value[courtName] = [];
           }
           
           allMatches.value = response.data.matches.map(match => ({
             ...match,
-            court: null,
-            matchNumber: null,
-            isFinal: false,
+            court: null, // スケジューリング前にコート情報はリセット
+            matchNumber: null, // スケジューリング前に試合番号はリセット
+            isFinal: false, // 決勝戦フラグは別途設定するならDBから取得するかここでロジックを追加
           }));
           showSnackbar('全試合データを読み込みました。', 'success');
 
+          // 初期化と全試合を最初のコートに割り振り
           initializeCourtLists();
           if (courtNames.value.length > 0) {
             scheduledMatchesByCourt.value[courtNames.value[0]].push(...allMatches.value);
           }
-          assignMatchNumbersAndCourts();
+          assignMatchNumbersAndCourts(); // 割り振り後に番号とコート名を再度割り当て
         } else {
           showSnackbar(response.data.message || '試合データの読み込みに失敗しました。', 'error');
           allMatches.value = [];
@@ -324,18 +321,45 @@ export default {
 
     const saveScheduledMatches = async () => {
       const matchesToSave = [];
-      for (const courtName in scheduledMatchesByCourt.value) {
-        matchesToSave.push(...scheduledMatchesByCourt.value[courtName]);
+      // 各コートの試合を一つの配列にまとめる
+      for (const courtName of courtNames.value) { // courtNames をループすることで順序を保証
+        scheduledMatchesByCourt.value[courtName].forEach(match => {
+          matchesToSave.push({
+            match_id: match.matchId,
+            tournament_id: match.tournamentId,
+            category_id: match.categoryId,
+            match_type: match.matchType,
+            round_index: match.roundIndex,
+            match_index: match.matchIndex,
+            player1_id: match.player1 ? match.player1.player_id : null,
+            player2_id: match.player2 ? match.player2.player_id : null,
+            // ここにスケジュール固有のデータを追加
+            court: match.court, // 割り当てられたコート名
+            match_order: match.matchNumber, // コートごとの試合順序
+            scheduled_date: null, // 将来的に日付・時刻を設定するなら
+            scheduled_time: null, // 将来的に日付・時刻を設定するなら
+            // 他の必要な情報を追加...
+          });
+        });
       }
 
       if (matchesToSave.length === 0) {
         showSnackbar('保存するスケジュールがありません。', 'warning');
         return;
       }
+       
       loadingSave.value = true;
       try {
-        // ★ここを修正: tournamentId を渡す場合は selectedTournamentId を使用★
-        // 例: await axios.post(`http://localhost:1880/save-scheduled-matches/${selectedTournamentId.value}`, { matches: matchesToSave });
+          const response = await axios.post(
+              `http://localhost:1880/save-scheduled-matches/${selectedTournamentId.value}`, 
+              { matches: matchesToSave }
+          );
+          
+          if (response.data.success) {
+              showSnackbar('スケジュールを正常に保存しました！', 'success');
+          } else {
+              showSnackbar(response.data.message || 'スケジュールの保存に失敗しました。', 'error');
+          }
         showSnackbar('スケジュールを保存しました！（ただし、バックエンドAPIは未実装です）', 'info');
       } catch (error) {
         console.error('Failed to save scheduled matches:', error);
@@ -345,18 +369,14 @@ export default {
       }
     };
 
-    // ★ここから追加: 大会リストの取得と選択時の処理★
     const fetchTournaments = async () => {
       try {
-        // CombinationCreatorView と同じようにパラメータを追加
         const params = new URLSearchParams();
         params.append('sort', 'start_date');
         params.append('order', 'desc');
 
         const response = await axios.get(`http://localhost:1880/tournaments?${params.toString()}`);
-        
         tournaments.value = response.data; 
-        
       } catch (error) {
         console.error('Failed to fetch tournaments:', error);
         showSnackbar('大会リストの取得に失敗しました。', 'error');
@@ -364,17 +384,14 @@ export default {
     };
 
     const onTournamentSelected = () => {
-      // 大会が選択解除された場合、試合データをクリア
       if (!selectedTournamentId.value) {
         allMatches.value = [];
-        scheduledMatchesByCourt.value = {};
+        scheduledMatchesByCourt.value = {}; // すべてのスケジュールをクリア
         initializeCourtLists(); // コートリストを初期化
       } else {
         fetchAllMatches(); // 大会が選択されたら試合データを読み込む
       }
     };
-    // ★ここまで追加★
-
   
     watch(numCourts, () => {
       initializeCourtLists();
@@ -382,11 +399,9 @@ export default {
 
     initializeCourtLists(); // 初期化時に一度コートリストを生成
 
-    // コンポーネントマウント時に大会リストを取得
     onMounted(() => {
       fetchTournaments();
     });
-
 
     return {
       allMatches,
@@ -405,11 +420,9 @@ export default {
       onDragEnd,
       isUndeterminedMatch,
       getUndeterminedMatchInfo,
-      // ★ここから追加★
       tournaments,
       selectedTournamentId,
       onTournamentSelected,
-      // ★ここまで追加★
     };
   },
 };

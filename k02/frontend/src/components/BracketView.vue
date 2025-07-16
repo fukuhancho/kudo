@@ -169,12 +169,11 @@
 </template>
 
 <script>
-import { ref, watch } from 'vue'; // onMounted は親で fetch するので不要
+import { ref, watch } from 'vue';
 import axios from 'axios';
 
 export default {
   name: 'BracketView',
-  // ★Props を定義：親から渡されるデータ
   props: {
     tournamentId: {
       type: [String, Number],
@@ -189,22 +188,25 @@ export default {
       required: true,
       default: () => [],
     },
+    // 親から渡される既存の組み合わせデータ
+    existingData: {
+      type: Object, // tournament_brackets テーブルのレコード全体が来る
+      default: null,
+    },
   },
-  // ★イベント定義：親にスナックバー表示を要求する
   emits: ['show-snackbar'],
   setup(props, { emit }) {
-    const tournamentRounds = ref([]); // 生成されたブラケットのラウンドごとの試合リスト
-    const finalWinner = ref(null); // 最終的な勝者
+    const tournamentRounds = ref([]);
+    const finalWinner = ref(null);
 
     const loadingGenerate = ref(false);
-    const loadingSave = ref(false); // 保存中のローディング状態
-    const loadingLoad = ref(false); // 読み込み中のローディング状態
+    const loadingSave = ref(false);
+    const loadingLoad = ref(false); // loadingLoad も残す
 
     // ドラッグ＆ドロップ関連のstate
-    const draggedItem = ref(null); // ドラッグ中の選手情報 { rIdx, mIdx, sType, playerObject }
-    const dropTarget = ref(null); // ドロップターゲットの選手情報 { rIdx, mIdx, sType } (視覚的フィードバック用)
+    const draggedItem = ref(null);
+    const dropTarget = ref(null);
 
-    // Match IDを生成するためのグローバルカウンター
     let globalMatchIdCounter = 0;
 
     // 定数（CSS変数と同期させる）
@@ -216,26 +218,24 @@ export default {
     const BASE_MATCH_VERTICAL_SPACING = 30;
     const TOTAL_MATCH_UNIT_HEIGHT = MATCH_BOX_HEIGHT + BASE_MATCH_VERTICAL_SPACING; // 121 + 30 = 151px
 
-    // 選手名、支部名、級を結合して表示する関数 (共通関数として親からもらうか、ここで定義)
     const getPlayerFullNameWithBranchAndXclass = (player) => {
       if (!player) return '未定';
       const fullName = `${player.familyname || ''} ${player.firstname || ''}`;
       const branchPart = player.branch_nm ? `（${player.branch_nm}）` : '';
       const xclassPart = player.xclass ? ` ${player.xclass}` : '';
       return `${fullName}${branchPart}${xclassPart}`;
+
     };
 
-    // スナックバーの表示を親コンポーネントに依頼
     const showSnackbar = (text, color) => {
       emit('show-snackbar', text, color);
     };
 
-    // トーナメント組み合わせを生成する関数 (ボタンクリック用)
     const generateTournament = () => {
       loadingGenerate.value = true;
-      tournamentRounds.value = []; // 既存の組み合わせをクリア
-      finalWinner.value = null; // 最終勝者もクリア
-      globalMatchIdCounter = 0; // 新しい生成ではカウンターをリセット
+      tournamentRounds.value = [];
+      finalWinner.value = null;
+      globalMatchIdCounter = 0;
 
       if (props.registeredParticipants.length < 2) {
         showSnackbar('組み合わせを生成するには2名以上の選手が必要です。', 'warning');
@@ -244,11 +244,10 @@ export default {
       }
 
       let currentRoundParticipants = [...props.registeredParticipants];
-      currentRoundParticipants.sort(() => 0.5 - Math.random()); // 初期シャッフル
+      currentRoundParticipants.sort(() => 0.5 - Math.random());
 
       let roundNumber = 1;
 
-      // --- ラウンド生成ループ ---
       while (currentRoundParticipants.length > 1) {
         const currentRoundMatches = [];
         const nextRoundAdvancingPlayers = [];
@@ -290,7 +289,6 @@ export default {
         roundNumber++;
       }
 
-      // ループ終了後、残っている参加者が1人であれば、それが優勝者
       if (currentRoundParticipants.length === 1) {
         finalWinner.value = currentRoundParticipants[0];
       } else {
@@ -301,7 +299,6 @@ export default {
       loadingGenerate.value = false;
     };
 
-    // ラウンド1の変更に基づいて、ラウンド2以降を再計算する関数
     const recalculateSubsequentRounds = () => {
       if (tournamentRounds.value.length === 0) {
         return;
@@ -375,7 +372,6 @@ export default {
       }
     };
 
-    // ブラケットをクリアする関数
     const clearBracket = () => {
       tournamentRounds.value = [];
       finalWinner.value = null;
@@ -383,7 +379,6 @@ export default {
       showSnackbar('トーナメント表をクリアしました。', 'info');
     };
 
-    // トーナメント組み合わせを保存する関数
     const saveBracket = async () => {
       if (!props.tournamentId || !props.categoryId || tournamentRounds.value.length === 0) {
         showSnackbar('保存する組み合わせがありません。大会、カテゴリーを選択し、組み合わせを生成してください。', 'warning');
@@ -392,7 +387,7 @@ export default {
 
       loadingSave.value = true;
       try {
-        const bracketId = crypto.randomUUID(); // 保存時に毎回新しいUUIDを生成
+        const bracketId = crypto.randomUUID();
 
         const payload = {
           bracket_id: bracketId,
@@ -417,7 +412,7 @@ export default {
       }
     };
 
-    // トーナメント組み合わせを読み込む関数
+    // loadBracket 関数を復活させ、ボタンクリックで呼び出せるようにする
     const loadBracket = async () => {
       if (!props.tournamentId || !props.categoryId) {
         showSnackbar('組み合わせを読み込むには、大会とカテゴリーを選択してください。', 'warning');
@@ -455,14 +450,45 @@ export default {
       }
     };
 
-    /**
-     * 各ラウンドの試合ブロックの垂直方向のオフセット（margin-top）を計算する関数。
-     * この関数は、現在のラウンドの最初の試合が、前のラウンドの関連する試合群の
-     * 垂直方向の中央に配置されるように調整します。
-     *
-     * @param {number} roundIndex - 現在のラウンドのインデックス (0から始まる)。
-     * @returns {string} CSSのmargin-top値（例: "75.5px"）。
-     */
+    // 親から渡される existingData を監視し、tournamentRounds を初期化する
+    // この watch は、ComponentCreatorView からデータが渡された時に「初期表示」または「自動更新」を行う
+    // loadBracket ボタンはユーザーが明示的に再読み込みしたい場合に使う
+    watch(() => props.existingData, (newData) => {
+      if (newData && newData.bracket_data) {
+        try {
+          let parsedBracketData;
+          // newData.bracket_data が文字列かどうかをチェック
+          if (typeof newData.bracket_data === 'string') {
+            parsedBracketData = JSON.parse(newData.bracket_data);
+          } else {
+            // 文字列でなければ、既にパース済みのオブジェクトとして扱う
+            parsedBracketData = newData.bracket_data;
+          }
+
+          let parsedFinalWinnerData = null;
+          if (newData.final_winner_data) {
+            if (typeof newData.final_winner_data === 'string') {
+              parsedFinalWinnerData = JSON.parse(newData.final_winner_data);
+            } else {
+              parsedFinalWinnerData = newData.final_winner_data;
+            }
+          }
+
+          tournamentRounds.value = parsedBracketData;
+          finalWinner.value = parsedFinalWinnerData;
+          // showSnackbar('既存のトーナメント組み合わせを自動読み込みしました！', 'info'); // 自動読み込み時のスナックバーは控えめにするか、出さない
+        } catch (e) {
+          console.error("Failed to parse existing bracket data from props:", e);
+          showSnackbar('既存のトーナメントデータの解析に失敗しました。', 'error');
+          clearBracket(); // パース失敗時はクリア
+        }
+      } else {
+        // existingDataがない、またはbracket_dataがない場合
+        clearBracket();
+      }
+    }, { immediate: true });
+
+    // CSS計算関数
     const getRoundMatchesMarginTop = (roundIndex) => {
       if (roundIndex === 0) return '0px';
 
@@ -475,15 +501,6 @@ export default {
       return `${currentRoundFirstMatchCenterY - MATCH_BOX_HEIGHT / 2}px`;
     };
 
-    /**
-     * 各試合ボックスの動的なmargin-bottomを計算する関数。
-     * ラウンドが進むにつれて、試合間の垂直方向のスペースを広げます。
-     *
-     * @param {number} roundIndex - 現在のラウンドのインデックス (0から始まる)。
-     * @param {number} matchIndex - 現在の試合のインデックス (0から始まる)。
-     * @param {number} totalMatchesInRound - 現在のラウンドの総試合数。
-     * @returns {string} CSSのmargin-bottom値（例: "30px"）。
-     */
     const calculateMatchMarginBottom = (roundIndex, matchIndex, totalMatchesInRound) => {
       if (roundIndex === tournamentRounds.value.length - 1) {
         return '0px';
@@ -498,30 +515,17 @@ export default {
       return `${requiredMargin}px`;
     };
 
-    /**
-     * Z字型接続線の垂直部分の高さに必要な動的な垂直間隔を計算する関数。
-     * これは、現在の試合ボックスの中心から、次のラウンドの試合ボックスの中心までの垂直距離です。
-     *
-     * @param {number} roundIndex - 現在のラウンドのインデックス (0から始まる)。
-     * @returns {number} 垂直線に必要な高さ (px)。
-     */
     const getZLineVerticalSegmentHeight = (roundIndex) => {
       return TOTAL_MATCH_UNIT_HEIGHT * Math.pow(2, roundIndex);
     };
 
-    /**
-     * 最終的な勝者ボックスの試合ブロックの垂直方向のオフセット（margin-top）を計算する関数。
-     * 最後のラウンドの試合ブロックの垂直位置に合わせます。
-     *
-     * @returns {string} CSSのmargin-top値。
-     */
     const getFinalWinnerMatchesMarginTop = () => {
       if (tournamentRounds.value.length === 0) return '0px';
       const lastRoundIndex = tournamentRounds.value.length - 1;
       return getRoundMatchesMarginTop(lastRoundIndex);
     };
 
-    // --- ドラッグ＆ドロップ関連の関数 ---
+    // ドラッグ＆ドロップ関連の関数
     const dragStart = (event, rIdx, mIdx, sType, player) => {
       if (rIdx !== 0 || player?.isWinnerPlaceholder || player?.isBye) {
         event.preventDefault();
@@ -586,17 +590,6 @@ export default {
       return dropTarget.value && dropTarget.value.rIdx === rIdx && dropTarget.value.mIdx === mIdx && dropTarget.value.sType === sType;
     };
 
-    // ★親から渡された Props (tournamentId, categoryId) の変更を監視し、データを読み込む
-    watch([() => props.tournamentId, () => props.categoryId], ([newTournamentId, newCategoryId]) => {
-      if (newTournamentId && newCategoryId) {
-        loadBracket(); // 結合された画面で大会/カテゴリが選択されたら自動ロード
-      } else {
-        // 大会またはカテゴリーがクリアされた場合、ブラケットデータもクリア
-        tournamentRounds.value = [];
-        finalWinner.value = null;
-      }
-    }, { immediate: true }); // コンポーネントがマウントされた直後にも実行
-
     return {
       tournamentRounds,
       finalWinner,
@@ -622,6 +615,7 @@ export default {
 };
 </script>
 
+
 <style scoped>
 /* CSS変数を定義して、調整しやすくする */
 .bracket-container {
@@ -632,13 +626,14 @@ export default {
   --match-border-width: 1px; /* 試合ボックスのボーダー幅 */
   /* 試合ボックス全体の高さ (選手スロット2つ + VSテキスト + パディング + ボーダー + 微調整) */
   --match-box-height: calc(var(--player-slot-height) * 2 + var(--vs-text-height) + var(--match-padding-vertical) * 2 + var(--match-border-width) * 2 + 5px); /* 121px */
-
+  
   /* ラウンド間の水平方向のギャップ */
   --round-horizontal-gap: 75px;
 
   --line-color: #757575; /* 線の色 */
+  
   /* 各水平線セグメントの長さ (ラウンド間のギャップの半分) */
-  --line-segment-length: calc(var(--round-horizontal-gap) / 2);
+  --line-segment-length: calc(var(--round-horizontal-gap) / 2); 
 
   /* 以下は既存の .bracket-container スタイル */
   display: flex;

@@ -68,29 +68,58 @@
 
     <v-main>
       <v-container fluid>
-        <router-view />
+        <router-view @show-snackbar="showAppSnackbar" />
       </v-container>
     </v-main>
+
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      :timeout="snackbar.timeout"
+      top
+      right
+    >
+      {{ snackbar.message }}
+      <template v-slot:actions>
+        <v-btn color="white" variant="text" @click="snackbar.show = false">
+          閉じる
+        </v-btn>
+      </template>
+    </v-snackbar>
   </v-app>
 </template>
 
 <script>
-// Vue Router を使うため、以前のコンポーネントインポートと `activeView` ロジックは不要
 import { ref } from 'vue';
 
 export default {
   name: 'App',
-  // components: {} は、もし App.vue内で直接使用するコンポーネントがなければ空でOK
-  // router-view は Vue Router が提供するため、ここでcomponentsに登録する必要はありません。
   setup() {
     const appTitle = ref('大会管理システム');
     const drawer = ref(true); // ドロワーの初期表示状態
 
-    // activeView や activeViewComponent、setActiveView は Vue Router に置き換えられるため削除
+    // --- ここからSnackbar関連の追加 ---
+    const snackbar = ref({
+      show: false,
+      message: '',
+      color: '',
+      timeout: 3000, // 3秒後に自動的に閉じる
+    });
+
+    const showAppSnackbar = (message, color) => {
+      snackbar.value.message = message;
+      snackbar.value.color = color;
+      snackbar.value.show = true;
+    };
+    // --- ここまでSnackbar関連の追加 ---
 
     return {
       appTitle,
       drawer,
+      // --- ここからSnackbar関連の追加 ---
+      snackbar,
+      showAppSnackbar,
+      // --- ここまでSnackbar関連の追加 ---
     };
   },
 };

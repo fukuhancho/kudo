@@ -80,6 +80,14 @@
         "env": []
     },
     {
+        "id": "b33c856426c15448",
+        "type": "tab",
+        "label": "match schedules API",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "aab57a20387da7cf",
         "type": "postgreSQLConfig",
         "name": "",
@@ -103,17 +111,6 @@
         "userFieldType": "str",
         "password": "postgres",
         "passwordFieldType": "str"
-    },
-    {
-        "id": "YOUR_POSTGRESQL_CONFIG_NODE_ID",
-        "type": "postgresql-config",
-        "name": "Your PostgreSQL DB",
-        "host": "localhost",
-        "port": "5432",
-        "database": "your_database_name",
-        "user": "your_username",
-        "password": "your_password",
-        "ssl": false
     },
     {
         "id": "e0d9c8b7a6f5e4d3c2b1",
@@ -3714,5 +3711,145 @@
         "x": 750,
         "y": 880,
         "wires": []
+    },
+    {
+        "id": "871af143ba518774",
+        "type": "http in",
+        "z": "b33c856426c15448",
+        "name": "POST /save-scheduled-matches/:tournamentId",
+        "url": "/save-scheduled-matches/:tournamentId",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 180,
+        "y": 180,
+        "wires": [
+            [
+                "i9j8k7l6m5n4o3p2"
+            ]
+        ]
+    },
+    {
+        "id": "i9j8k7l6m5n4o3p2",
+        "type": "function",
+        "z": "b33c856426c15448",
+        "name": "Prepare SQL for Save Schedule",
+        "func": "// Functionノード: Prepare SQL for Save Schedule\nconst matchesToSave = msg.payload.matches;\nconst tournamentId = msg.req.params.tournamentId;\n\nif (!matchesToSave || !Array.isArray(matchesToSave) || matchesToSave.length === 0) {\n    msg.statusCode = 400;\n    msg.payload = { success: false, message: \"保存する試合データがありません。\" };\n    return msg;\n}\n\nlet valuesClauses = [];\n\nmatchesToSave.forEach(match => {\n    // !! SQLインジェクション対策として、これらの値は必ずエスケープしてください !!\n    // 本番環境では、外部ライブラリの利用や、Node.js pgライブラリの適切なパラメータバインディングを検討してください。\n    // 例として、PostgreSQLのstring_literal_escape関数をFunctionノードのセットアップで定義できる場合:\n    // const escapeSql = (value) => { return flow.get('escapeSql')(value); };\n    // let category_id = match.category_id ? `'${escapeSql(match.category_id)}'` : 'NULL';\n    // 今はエスケープなしで進めますが、この点にご注意ください。\n\n    const category_id = match.category_id ? `'${match.category_id.replace(/'/g, \"''\")}'` : 'NULL'; // 単純なシングルクォートのエスケープ例\n    const match_id = match.match_id ? `'${match.match_id.replace(/'/g, \"''\")}'` : 'NULL';\n    const court = match.court ? `'${match.court.replace(/'/g, \"''\")}'` : 'NULL';\n    const match_order = match.match_order !== null && match.match_order !== undefined ? match.match_order : 'NULL';\n    const scheduled_date = match.scheduled_date ? `'${match.scheduled_date.replace(/'/g, \"''\")}'` : 'NULL';\n    const scheduled_time = match.scheduled_time ? `'${match.scheduled_time.replace(/'/g, \"''\")}'` : 'NULL';\n    const t_id = tournamentId ? `'${tournamentId.replace(/'/g, \"''\")}'` : 'NULL';\n\n    // 各行のVALUES部分を生成\n    const valueRow = `(gen_random_uuid(), ${t_id}, ${category_id}, ${match_id}, ${court}, ${match_order}, ${scheduled_date}, ${scheduled_time}, NOW(), NOW())`;\n    valuesClauses.push(valueRow);\n});\n\n// 全てのVALUES句をカンマで結合\nconst allValues = valuesClauses.join(',\\n');\n\n// 最終的なSQLクエリ文字列を構築\nconst sqlQuery = `\n    INSERT INTO match_schedules (\n        schedule_id, tournament_id, category_id, match_id, court_name, match_order, scheduled_date, scheduled_time, created_at, updated_at\n    ) VALUES \n    ${allValues}\n    ON CONFLICT (tournament_id, category_id, match_id) DO UPDATE SET\n        court_name = EXCLUDED.court_name,\n        match_order = EXCLUDED.match_order,\n        scheduled_date = EXCLUDED.scheduled_date,\n        scheduled_time = EXCLUDED.scheduled_time,\n        updated_at = NOW()\n    RETURNING schedule_id;\n`;\n\n// msg.payload に単一のSQLクエリ文字列を設定\nmsg.payload = sqlQuery; \n\n// PostgreSQLノードが msg.payload を読むように、msg.query も設定しておく（念のため）\n// ただし、通常は msg.payload だけでOKです\nmsg.query = sqlQuery; \n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 510,
+        "y": 180,
+        "wires": [
+            [
+                "q3r2s1t0u9v8w7x6"
+            ]
+        ]
+    },
+    {
+        "id": "q3r2s1t0u9v8w7x6",
+        "type": "postgresql",
+        "z": "b33c856426c15448",
+        "name": "Save Schedules to DB",
+        "query": "msg.query",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 940,
+        "y": 180,
+        "wires": [
+            [
+                "b6881dd9c13f0b11"
+            ]
+        ]
+    },
+    {
+        "id": "y5z4a3b2c1d0e9f8",
+        "type": "http response",
+        "z": "b33c856426c15448",
+        "name": "Success Response",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1520,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "df03661d236f22ce",
+        "type": "catch",
+        "z": "b33c856426c15448",
+        "name": "Catch Errors",
+        "scope": null,
+        "uncaught": false,
+        "x": 480,
+        "y": 280,
+        "wires": [
+            [
+                "o9p8q7r6s5t4u3v2",
+                "ca565cb21c15693f"
+            ]
+        ]
+    },
+    {
+        "id": "o9p8q7r6s5t4u3v2",
+        "type": "debug",
+        "z": "b33c856426c15448",
+        "name": "Error Debug",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 720,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "ca565cb21c15693f",
+        "type": "function",
+        "z": "b33c856426c15448",
+        "name": "Error Response",
+        "func": "msg.statusCode = 500;\nmsg.payload = { success: false, message: msg.error ? msg.error.message : \"サーバー側でスケジュールの保存に失敗しました。\" };\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1300,
+        "y": 280,
+        "wires": [
+            [
+                "y5z4a3b2c1d0e9f8"
+            ]
+        ]
+    },
+    {
+        "id": "b6881dd9c13f0b11",
+        "type": "function",
+        "z": "b33c856426c15448",
+        "name": "Set statusCode",
+        "func": "// Functionノード: Success Response Builder\n// データベースへの保存が成功した場合に、このノードにメッセージが到達します。\n// PostgreSQLノードは、通常、成功すると msg.payload に結果（例: rowCount, commandなど）を返します。\n\nmsg.statusCode = 200; // HTTPステータスコードを200 OKに設定\nmsg.payload = { \n    success: true, \n    message: \"スケジュールが正常に保存されました。\", // 成功メッセージ\n    // 必要であれば、データベースから返された結果（例: 挿入された schedule_id など）を\n    // msg.payload.result として含めることもできます。\n    // result: msg.payload // PostgreSQLノードの生の結果を含める場合\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1200,
+        "y": 180,
+        "wires": [
+            [
+                "y5z4a3b2c1d0e9f8"
+            ]
+        ]
     }
 ]
