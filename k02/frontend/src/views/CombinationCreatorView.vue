@@ -30,7 +30,7 @@
 
       <div v-if="selectedTournamentId && selectedCategoryId && registeredParticipants.length > 0">
         <v-divider class="my-4"></v-divider>
-        <h3 class="text-h6 mb-2">組み合わせ形式の選択 (登録選手数: {{ registeredParticipants.length }}名)</h3>
+        <h3 class="text-h6 mb-4">組み合わせ操作</h3>
         <v-radio-group v-model="selectedCombinationType" row>
           <v-radio
             label="トーナメント戦 (2名または6名以上推奨)"
@@ -57,6 +57,7 @@
             :category-id="selectedCategoryId"
             :registered-participants="registeredParticipants"
             :existing-data="existingCombinationData && selectedCombinationType === 'tournament' ? existingCombinationData : null"
+            :number-of-courts="selectedTournamentNumberOfCourts"
             @show-snackbar="showSnackbar"
           />
         </div>
@@ -66,6 +67,7 @@
             :category-id="selectedCategoryId"
             :registered-participants="registeredParticipants"
             :existing-data="existingCombinationData && selectedCombinationType === 'league' ? existingCombinationData : null"
+            :number-of-courts="selectedTournamentNumberOfCourts"
             @show-snackbar="showSnackbar"
           />
         </div>
@@ -75,6 +77,7 @@
             :category-id="selectedCategoryId"
             :registered-participants="registeredParticipants"
             :existing-data="existingCombinationData && selectedCombinationType === 'pentagon' ? existingCombinationData : null"
+            :number-of-courts="selectedTournamentNumberOfCourts"
             @show-snackbar="showSnackbar"
           />
         </div>
@@ -123,7 +126,6 @@ import BracketView from '../components/BracketView.vue';
 import LeagueMatchView from '../components/LeagueMatchView.vue';
 import PentagonMatchView from '../components/PentagonMatchView.vue';
 
-// ----- state variables -----
 const tournamentsList = ref([]);
 const categoriesList = ref([]);
 const registeredParticipants = ref([]);
@@ -131,6 +133,7 @@ const selectedTournamentId = ref(null);
 const selectedCategoryId = ref(null);
 const selectedCombinationType = ref(null);
 const existingCombinationData = ref(null);
+const selectedTournamentNumberOfCourts = ref(0);
 
 const snackbar = ref(false);
 const snackbarText = ref('');
@@ -140,7 +143,6 @@ const confirmChangeDialog = ref(false);
 const previousCombinationType = ref(null);
 const isSettingCombinationTypeProgrammatically = ref(false); 
 
-// ----- computed properties for enabling/disabling combination type selection -----
 const participantCount = computed(() => registeredParticipants.value.length);
 
 const canSelectTournament = computed(() => {
@@ -155,7 +157,6 @@ const canSelectPentagon = computed(() => {
   return participantCount.value === 5;
 });
 
-// ----- methods -----
 const showSnackbar = (text, color) => {
   snackbarText.value = text;
   snackbarColor.value = color;
@@ -253,6 +254,8 @@ const fetchRegisteredParticipants = async (tournamentId, categoryId) => {
 
 const handleTournamentChange = async (newTournamentId) => {
   selectedTournamentId.value = newTournamentId;
+  const selectedTournament = tournamentsList.value.find(t => t.tournament_id === newTournamentId);
+  selectedTournamentNumberOfCourts.value = selectedTournament ? selectedTournament.number_coat : 0;
   await fetchCategoriesList(newTournamentId);
 };
 

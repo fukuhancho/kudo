@@ -74,6 +74,30 @@
                       '--z-line-vertical-segment-height': getZLineVerticalSegmentHeight(roundIndex) + 'px'
                     }"
                   >
+                    <!-- 試合スケジュール入力欄: プレースホルダーの選手を含む試合でも表示 -->
+                    <div v-if="match && tournamentRounds.length > 0" class="match-schedule-inputs-top-right">
+                      <!-- コート選択 (標準HTML select) -->
+                      <select
+                        v-model="match.court_id"
+                        @change="updateMatchSchedule(roundIndex, matchIndex, 'court', $event.target.value)"
+                        class="custom-input court-select"
+                      >
+                        <option value="" disabled selected>コート</option>
+                        <option v-for="courtOption in availableCourtOptions" :key="courtOption" :value="courtOption">
+                          {{ courtOption }}
+                        </option>
+                      </select>
+                      <!-- 試合順入力 (標準HTML input type="number") -->
+                      <input
+                        type="number"
+                        v-model.number="match.match_order_no"
+                        @input="updateMatchSchedule(roundIndex, matchIndex, 'order', $event.target.value)"
+                        min="1"
+                        placeholder="No."
+                        class="custom-input match-order-input"
+                      />
+                    </div>
+
                     <div
                       class="player-slot"
                       :draggable="roundIndex === 0 && !match.player1?.isWinnerPlaceholder && !match.player1?.isBye"
@@ -169,7 +193,7 @@
 </template>
 
 <script>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import axios from 'axios';
 
 export default {
@@ -188,35 +212,36 @@ export default {
       required: true,
       default: () => [],
     },
-    // 親から渡される既存の組み合わせデータ
     existingData: {
-      type: Object, // tournament_brackets テーブルのレコード全体が来る
+      type: Object,
       default: null,
     },
+    numberOfCourts: {
+      type: Number,
+      default: 0,
+    }
   },
-  emits: ['show-snackbar'],
+  emits: ['show-snackbar'], // 明示的にemitsを宣言
   setup(props, { emit }) {
     const tournamentRounds = ref([]);
     const finalWinner = ref(null);
 
     const loadingGenerate = ref(false);
     const loadingSave = ref(false);
-    const loadingLoad = ref(false); // loadingLoad も残す
+    const loadingLoad = ref(false);
 
-    // ドラッグ＆ドロップ関連のstate
     const draggedItem = ref(null);
     const dropTarget = ref(null);
 
     let globalMatchIdCounter = 0;
 
-    // 定数（CSS変数と同期させる）
     const PLAYER_SLOT_HEIGHT = 40;
     const VS_TEXT_HEIGHT = 18;
     const MATCH_PADDING_VERTICAL = 8;
     const MATCH_BORDER_WIDTH = 1;
-    const MATCH_BOX_HEIGHT = (PLAYER_SLOT_HEIGHT * 2) + VS_TEXT_HEIGHT + (MATCH_PADDING_VERTICAL * 2) + (MATCH_BORDER_WIDTH * 2) + 5; // 121px
+    const MATCH_BOX_HEIGHT = (PLAYER_SLOT_HEIGHT * 2) + VS_TEXT_HEIGHT + (MATCH_PADDING_VERTICAL * 2) + (MATCH_BORDER_WIDTH * 2) + 5;
     const BASE_MATCH_VERTICAL_SPACING = 30;
-    const TOTAL_MATCH_UNIT_HEIGHT = MATCH_BOX_HEIGHT + BASE_MATCH_VERTICAL_SPACING; // 121 + 30 = 151px
+    const TOTAL_MATCH_UNIT_HEIGHT = MATCH_BOX_HEIGHT + BASE_MATCH_VERTICAL_SPACING;
 
     const getPlayerFullNameWithBranchAndXclass = (player) => {
       if (!player) return '未定';
@@ -224,7 +249,6 @@ export default {
       const branchPart = player.branch_nm ? `（${player.branch_nm}）` : '';
       const xclassPart = player.xclass ? ` ${player.xclass}` : '';
       return `${fullName}${branchPart}${xclassPart}`;
-
     };
 
     const showSnackbar = (text, color) => {
@@ -267,7 +291,9 @@ export default {
           currentRoundMatches.push({
             player1: player,
             player2: { id: `BYE_${matchId}`, name: 'BYE', isBye: true },
-            matchId: matchId
+            matchId: matchId,
+            court_id: null,
+            match_order_no: null
           });
           nextRoundAdvancingPlayers.push(player);
         });
@@ -278,7 +304,9 @@ export default {
           currentRoundMatches.push({
             player1: playersPlaying[i],
             player2: playersPlaying[i + 1],
-            matchId: matchId
+            matchId: matchId,
+            court_id: null,
+            match_order_no: null
           });
           nextRoundAdvancingPlayers.push({ isWinnerPlaceholder: true, winnerOf: matchId });
         }
@@ -352,7 +380,9 @@ export default {
           nextRoundMatches.push({
             player1: playersPlaying[i],
             player2: playersPlaying[i + 1],
-            matchId: matchId
+            matchId: matchId,
+            court_id: null,
+            match_order_no: null
           });
           nextRoundAdvancingPlayers.push({ isWinnerPlaceholder: true, winnerOf: matchId });
         }
@@ -412,7 +442,6 @@ export default {
       }
     };
 
-    // loadBracket 関数を復活させ、ボタンクリックで呼び出せるようにする
     const loadBracket = async () => {
       if (!props.tournamentId || !props.categoryId) {
         showSnackbar('組み合わせを読み込むには、大会とカテゴリーを選択してください。', 'warning');
@@ -424,7 +453,14 @@ export default {
         const response = await axios.get(`http://localhost:1880/load-bracket/${props.tournamentId}/${props.categoryId}`);
 
         if (response.data.success) {
-          tournamentRounds.value = JSON.parse(response.data.bracket_data);
+          const loadedRounds = JSON.parse(response.data.bracket_data);
+          loadedRounds.forEach(round => {
+            round.forEach(match => {
+              if (!('court_id' in match)) match.court_id = null;
+              if (!('match_order_no' in match)) match.match_order_no = null;
+            });
+          });
+          tournamentRounds.value = loadedRounds;
           finalWinner.value = response.data.final_winner_data ? JSON.parse(response.data.final_winner_data) : null;
           showSnackbar('トーナメント組み合わせを読み込みました！', 'success');
         } else {
@@ -450,20 +486,22 @@ export default {
       }
     };
 
-    // 親から渡される existingData を監視し、tournamentRounds を初期化する
-    // この watch は、ComponentCreatorView からデータが渡された時に「初期表示」または「自動更新」を行う
-    // loadBracket ボタンはユーザーが明示的に再読み込みしたい場合に使う
     watch(() => props.existingData, (newData) => {
       if (newData && newData.bracket_data) {
         try {
           let parsedBracketData;
-          // newData.bracket_data が文字列かどうかをチェック
           if (typeof newData.bracket_data === 'string') {
             parsedBracketData = JSON.parse(newData.bracket_data);
           } else {
-            // 文字列でなければ、既にパース済みのオブジェクトとして扱う
             parsedBracketData = newData.bracket_data;
           }
+
+          parsedBracketData.forEach(round => {
+            round.forEach(match => {
+              if (!('court_id' in match)) match.court_id = null;
+              if (!('match_order_no' in match)) match.match_order_no = null;
+            });
+          });
 
           let parsedFinalWinnerData = null;
           if (newData.final_winner_data) {
@@ -476,19 +514,16 @@ export default {
 
           tournamentRounds.value = parsedBracketData;
           finalWinner.value = parsedFinalWinnerData;
-          // showSnackbar('既存のトーナメント組み合わせを自動読み込みしました！', 'info'); // 自動読み込み時のスナックバーは控えめにするか、出さない
         } catch (e) {
           console.error("Failed to parse existing bracket data from props:", e);
           showSnackbar('既存のトーナメントデータの解析に失敗しました。', 'error');
-          clearBracket(); // パース失敗時はクリア
+          clearBracket();
         }
       } else {
-        // existingDataがない、またはbracket_dataがない場合
         clearBracket();
       }
     }, { immediate: true });
 
-    // CSS計算関数
     const getRoundMatchesMarginTop = (roundIndex) => {
       if (roundIndex === 0) return '0px';
 
@@ -525,7 +560,6 @@ export default {
       return getRoundMatchesMarginTop(lastRoundIndex);
     };
 
-    // ドラッグ＆ドロップ関連の関数
     const dragStart = (event, rIdx, mIdx, sType, player) => {
       if (rIdx !== 0 || player?.isWinnerPlaceholder || player?.isBye) {
         event.preventDefault();
@@ -582,13 +616,34 @@ export default {
 
       draggedItem.value = null;
 
-      recalculateSubsequentRounds(); // 入れ替え後にラウンド2以降を再計算
+      recalculateSubsequentRounds();
       showSnackbar('選手を入れ替えました！トーナメント表を更新しました！', 'success');
     };
 
     const isDragOverTarget = (rIdx, mIdx, sType) => {
       return dropTarget.value && dropTarget.value.rIdx === rIdx && dropTarget.value.mIdx === mIdx && dropTarget.value.sType === sType;
     };
+
+    const updateMatchSchedule = (roundIndex, matchIndex, type, value) => {
+      if (tournamentRounds.value[roundIndex] && tournamentRounds.value[roundIndex][matchIndex]) {
+        if (type === 'court') {
+          tournamentRounds.value[roundIndex][matchIndex].court_id = value;
+        } else if (type === 'order') {
+          tournamentRounds.value[roundIndex][matchIndex].match_order_no = value === '' ? null : parseInt(value, 10);
+          if (isNaN(tournamentRounds.value[roundIndex][matchIndex].match_order_no)) {
+            tournamentRounds.value[roundIndex][matchIndex].match_order_no = null;
+          }
+        }
+      }
+    };
+
+    const availableCourtOptions = computed(() => {
+      const courts = [];
+      for (let i = 0; i < props.numberOfCourts; i++) {
+        courts.push(String.fromCharCode(65 + i));
+      }
+      return courts;
+    });
 
     return {
       tournamentRounds,
@@ -610,153 +665,142 @@ export default {
       dragLeave,
       drop,
       isDragOverTarget,
+      updateMatchSchedule,
+      availableCourtOptions,
     };
   },
 };
 </script>
 
-
 <style scoped>
-/* CSS変数を定義して、調整しやすくする */
 .bracket-container {
-  /* ここにCSS変数を定義 */
-  --player-slot-height: 40px; /* 選手名スロットのおおよその高さ */
-  --vs-text-height: 18px; /* VSテキストのおおよその高さ */
-  --match-padding-vertical: 8px; /* 試合ボックスの上下パディング */
-  --match-border-width: 1px; /* 試合ボックスのボーダー幅 */
-  /* 試合ボックス全体の高さ (選手スロット2つ + VSテキスト + パディング + ボーダー + 微調整) */
-  --match-box-height: calc(var(--player-slot-height) * 2 + var(--vs-text-height) + var(--match-padding-vertical) * 2 + var(--match-border-width) * 2 + 5px); /* 121px */
+  --player-slot-height: 40px;
+  --vs-text-height: 18px;
+  --match-padding-vertical: 8px;
+  --match-border-width: 1px;
+  --match-box-height: calc(var(--player-slot-height) * 2 + var(--vs-text-height) + (var(--match-padding-vertical) * 2) + (var(--match-border-width) * 2) + 5px);
   
-  /* ラウンド間の水平方向のギャップ */
   --round-horizontal-gap: 75px;
 
-  --line-color: #757575; /* 線の色 */
+  --line-color: #757575;
   
-  /* 各水平線セグメントの長さ (ラウンド間のギャップの半分) */
   --line-segment-length: calc(var(--round-horizontal-gap) / 2); 
 
-  /* 以下は既存の .bracket-container スタイル */
   display: flex;
-  flex-direction: row; /* ラウンドを横に並べる */
-  gap: var(--round-horizontal-gap); /* ラウンド間の水平ギャップ */
+  flex-direction: row;
+  gap: var(--round-horizontal-gap);
   padding: 20px;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   background-color: #f9f9f9;
-  min-width: fit-content; /* コンテンツの幅に合わせて広がる */
-  align-items: flex-start; /* 各ラウンドを上揃えにする */
+  min-width: fit-content;
+  align-items: flex-start;
 }
 
 .bracket-display-area {
-  overflow-x: auto; /* 横スクロールを可能にする */
-  padding-bottom: 20px; /* スクロールバーのための余白 */
+  overflow-x: auto;
+  padding-bottom: 20px;
 }
 
-/* 新しいラッパーコンテナ */
 .bracket-round-container {
   display: flex;
   flex-direction: column;
-  align-items: center; /* タイトルと試合ブロックを中央揃え */
-  flex-shrink: 0; /* 縮まないようにする */
-  position: relative; /* 線の描画のために必要 */
+  align-items: center;
+  flex-shrink: 0;
+  position: relative;
 }
 
 .round-title {
-  margin-bottom: 15px; /* タイトルと試合ブロックの間のスペース */
+  margin-bottom: 15px;
   font-size: 1.1em;
-  color: #3f51b5; /* Primary color */
+  color: #3f51b5;
   border-bottom: 2px solid #3f51b5;
   padding-bottom: 5px;
   width: 100%;
   text-align: center;
 }
 
-/* bracket-round は now 試合ブロックのコンテナ */
 .bracket-round {
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative; /* 線の描画のために必要 */
-  /* margin-top は Vue の v-bind:style で動的に設定される */
+  position: relative;
 }
 
 .round-matches {
   display: flex;
   flex-direction: column;
-  position: relative; /* 接続線のために必要 */
+  position: relative;
 }
 
 .bracket-match {
   display: flex;
-  flex-direction: column; /* 選手名を縦並びにする */
-  align-items: center; /* 中央揃え */
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  gap: 5px; /* 選手名とVSの間のスペースを調整 */
+  gap: 5px;
   padding: var(--match-padding-vertical) 12px;
+  padding-top: calc(var(--match-padding-vertical) + 25px);
   border: var(--match-border-width) solid #cfd8dc;
   border-radius: 4px;
-  background-color: #EEEEEE; /* 試合枠の背景色を薄いグレーに変更 */
+  background-color: #EEEEEE;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  min-width: 180px; /* 試合ボックスの最小幅を調整 */
+  min-width: 180px;
   position: relative;
-  z-index: 10; /* 線の上に表示されるように、z-indexを高く設定 */
-  height: var(--match-box-height); /* 固定高さでレイアウトの一貫性を確保 */
-  box-sizing: border-box; /* paddingとborderを高さに含める */
-  /* margin-bottom は Vue の v-bind:style で動的に設定されるため、ここからは削除 */
+  z-index: 10;
+  height: var(--match-box-height);
+  box-sizing: border-box;
 }
 
 .player-slot {
-  width: 100%; /* 親要素の幅いっぱいに広げる */
+  width: 100%;
   padding: 4px 8px;
   border-radius: 3px;
   font-weight: bold;
-  text-align: center; /* テキストを中央揃え */
+  text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 0.9em;
-  height: var(--player-slot-height); /* 選手スロットの固定高さ */
-  display: flex; /* テキストの垂直方向中央揃え用 */
+  height: var(--player-slot-height);
+  display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* ドラッグ可能な選手スロットのスタイル */
 .player-slot[draggable="true"] {
-  cursor: grab; /* ドラッグできることを示すカーソル */
+  cursor: grab;
 }
 
 .player-slot[draggable="true"]:active {
-  cursor: grabbing; /* ドラッグ中のカーソル */
+  cursor: grabbing;
 }
 
-/* ドロップターゲットになったときの視覚的フィードバック */
 .player-slot.drag-over-target {
-  border: 2px dashed #3f51b5; /* ドロップ可能な場所を点線でハイライト */
-  background-color: #bbdefb; /* 背景色を少し明るい青に */
+  border: 2px dashed #3f51b5;
+  background-color: #bbdefb;
 }
 
 .player-blue {
-  background-color: #e3f2fd; /* Light blue */
-  color: #1565c0; /* Darker blue */
+  background-color: #e3f2fd;
+  color: #1565c0;
   border: 1px solid #90caf9;
 }
 
 .player-white {
-  background-color: #FFFFFF; /* 純粋な白に変更 */
-  color: #212121; /* 黒に近いグレーで視認性を確保 */
-  border: 1px solid #bdbdbd; /* ライトグレーのボーダー */
+  background-color: #FFFFFF;
+  color: #212121;
+  border: 1px solid #bdbdbd;
 }
 
-/* 勝者プレースホルダーのスタイル */
 .player-placeholder {
-  background-color: #f0f0f0; /* 薄いグレー */
-  color: #616161; /* 暗めのグレー */
-  border: 1px solid #bdbdbd; /* player-whiteと同じボーダー */
+  background-color: #f0f0f0;
+  color: #616161;
+  border: 1px solid #bdbdbd;
 }
 
-.player-gold { /* 優勝者用の新しいスタイル */
-  background-color: #FFD700; /* Gold */
+.player-gold {
+  background-color: #FFD700;
   color: #333333;
   border: 1px solid #DAA520;
 }
@@ -765,73 +809,120 @@ export default {
   font-weight: bold;
   color: #757575;
   font-size: 0.9em;
-  margin: 2px 0; /* VSテキストの上下の余白 */
+  margin: 2px 0;
 }
 
-/* --- 線の描画 --- */
-
-/* 偶数番目ではない試合（ペアの下側や、ラウンドの最後の試合）に適用される水平線 */
 .bracket-match:not(.has-line-to-next)::after {
   content: '';
   position: absolute;
-  left: 100%; /* 親要素の右端に::afterの左端を合わせる */
-  top: 50%; /* ::after要素の上端を、親要素の垂直方向中央に揃える */
-  transform: translateY(-0.5px); /* 1pxの線の厚さを考慮して正確に中央に配置 */
+  left: 100%;
+  top: 50%;
+  transform: translateY(-0.5px);
   width: var(--line-segment-length);
   height: 1px;
   background-color: var(--line-color);
   z-index: 0;
-  pointer-events: none; /* クリックイベントをブロックしないようにする */
+  pointer-events: none;
 }
 
-/* 偶数番目の試合（ペアの上側）に適用されるZ字型の線 */
 .bracket-match.has-line-to-next::after {
   content: '';
   position: absolute;
-  left: 100%; /* 親要素の右端に::afterの左端を合わせる */
-  top: 50%; /* ::after要素の上端を、親要素の垂直方向中央に揃える */
-  transform: translateY(-0.5px); /* 1pxの線の厚さを考慮して正確に中央に配置 */
-  /* ::after要素の幅は、2つの水平線セグメントを合わせたもの */
+  left: 100%;
+  top: 50%;
+  transform: translateY(-0.5px);
   width: calc(var(--line-segment-length) * 2);
-  /* ::after要素の高さは、垂直線セグメントの高さ */
-  height: var(--z-line-vertical-segment-height); /* JSから渡されるCSS変数を使用 */
+  height: var(--z-line-vertical-segment-height);
   z-index: 0;
   pointer-events: none;
 
   background:
-    /* 1. 最初の水平線 (試合ボックスの中心から伸びる) */
     linear-gradient(to right, var(--line-color) 0%, var(--line-color) 100%)
-    0 /* X開始位置: ::after要素の左端 (これが試合ボックスの右端) */
-    0px /* Y開始位置: ::after要素の上端 (これが試合ボックスの垂直方向中央) */
-    / var(--line-segment-length) 1px /* サイズ: 最初の水平線の長さ, 1pxの太さ */
+    0
+    0px
+    / var(--line-segment-length) 1px
     no-repeat,
 
-    /* 2. 垂直線 (試合ボックスの中心から、次の試合の中心まで) */
     linear-gradient(to bottom, var(--line-color) 0%, var(--line-color) 100%)
-    var(--line-segment-length) /* X開始位置: 最初の水平線の終点 */
-    0px /* Y開始位置: 垂直線の開始Y座標 (::afterの上端) */
-    / 1px var(--z-line-vertical-segment-height) /* サイズ: 1px幅, 垂直線の長さ (::afterの全高) */
+    var(--line-segment-length)
+    0px
+    / 1px var(--z-line-vertical-segment-height)
     no-repeat,
 
-    /* 3. 2番目の水平線 (垂直線の終点から次のラウンドへ) */
     linear-gradient(to right, var(--line-color) 0%, var(--line-color) 100%)
-    var(--line-segment-length) /* X開始位置: 垂直線の開始X座標 */
-    calc(var(--z-line-vertical-segment-height) / 2 - 0.5px) /* Y開始位置: ::after要素の高さの半分 */
-    / var(--line-segment-length) 1px /* サイズ: 2番目の水平線の長さ, 1pxの太さ */
+    var(--line-segment-length)
+    calc(var(--z-line-vertical-segment-height) / 2 - 0.5px)
+    / var(--line-segment-length) 1px
     no-repeat;
 }
 
-/* 最終的な勝者ボックスの左側から伸びる水平線 */
 .final-winner-container .bracket-match::before {
   content: '';
   position: absolute;
-  right: 100%; /* 親要素の左端に::beforeの右端を合わせる */
+  right: 100%;
   top: 50%;
-  transform: translateY(-0.5px); /* 1pxの線の厚さを考慮して正確に中央に配置 */
-  width: var(--line-segment-length); /* 新しい変数を使用 */
+  transform: translateY(-0.5px);
+  width: var(--line-segment-length);
   height: 1px;
   background-color: var(--line-color);
   z-index: 0;
-  pointer-events: none; /* クリックイベントをブロックしないようにする */
+  pointer-events: none;
+}
+
+.match-schedule-inputs-top-right {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: flex;
+  gap: 4px;
+  z-index: 11;
+}
+
+/* カスタム入力フィールドのスタイル */
+.custom-input {
+  max-width: 45px;
+  min-width: 25px;
+  height: 24px;
+  font-size: 0.75em;
+  padding: 0 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  background-color: white;
+  color: #333;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+/* number input の矢印を非表示 (Chrome, Safari, Edge) */
+.custom-input::-webkit-outer-spin-button,
+.custom-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* select のデフォルト矢印を非表示にし、カスタム矢印を追加することも可能ですが、今回はシンプルに */
+.court-select {
+  padding-right: 15px;
+  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-6.5%200-12.3%203.2-15.6%208.1-3.3%204.9-3.3%2011.2%200%2016.1l132%20126.7c3.3%203.2%208.3%203.2%2011.6%200l132-126.7c3.3-4.9%203.3-11.2%200-16.1z%22%2F%3E%3C%2Fsvg%3E');
+  background-repeat: no-repeat;
+  background-position: right 3px center;
+  background-size: 8px;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* フォーカス時のスタイル */
+.custom-input:focus {
+  outline: none;
+  border-color: #3f51b5;
+  box-shadow: 0 0 0 1px #3f51b5;
+}
+
+/* Placeholder のスタイル */
+.custom-input::placeholder {
+  color: #999;
+  font-size: 0.7em;
 }
 </style>

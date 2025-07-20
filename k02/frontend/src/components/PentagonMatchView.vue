@@ -117,21 +117,29 @@
                 {{ getPlayerFullNameWithBranchAndXclass(item.player2).xclass }}
             </span>
           </template>
-          <template v-slot:[`item.score`]="{ item }">
-            <v-text-field
-              v-model="item.score"
-              label="スコア"
-              dense
-              hide-details
-              outlined
-              class="my-1"
-            ></v-text-field>
+          <template v-slot:[`item.court_id`]="{ item }">
+            <select
+              v-model="item.court_id"
+              @change="updateMatchSchedule(item, 'court', $event.target.value)"
+              class="custom-input court-select"
+            >
+              <option value="" disabled selected>コート</option>
+              <option v-for="courtOption in availableCourtOptions" :key="courtOption" :value="courtOption">
+                {{ courtOption }}
+              </option>
+            </select>
           </template>
-          <template v-slot:[`item.actions`]="{ item }">
-            <v-btn icon size="small" @click="addAdditionalMatch(item)">
-                <v-icon>mdi-plus-circle-outline</v-icon>
-            </v-btn>
+          <template v-slot:[`item.match_order_no`]="{ item }">
+            <input
+              type="number"
+              v-model.number="item.match_order_no"
+              @input="updateMatchSchedule(item, 'order', $event.target.value)"
+              min="1"
+              placeholder="No."
+              class="custom-input match-order-input"
+            />
           </template>
+          <!-- アクション列を削除 -->
         </v-data-table>
         <div v-if="initialMatches.length === 0 && pentagonParticipantsOrder.length === 5">
           <p>「初期試合生成」ボタンを押して試合を生成してください。</p>
@@ -165,21 +173,29 @@
                 {{ getPlayerFullNameWithBranchAndXclass(item.player2).xclass }}
               </span>
             </template>
-            <template v-slot:[`item.score`]="{ item }">
-              <v-text-field
-                v-model="item.score"
-                label="スコア"
-                dense
-                hide-details
-                outlined
-                class="my-1"
-              ></v-text-field>
+            <template v-slot:[`item.court_id`]="{ item }">
+              <select
+                v-model="item.court_id"
+                @change="updateMatchSchedule(item, 'court', $event.target.value)"
+                class="custom-input court-select"
+              >
+                <option value="" disabled selected>コート</option>
+                <option v-for="courtOption in availableCourtOptions" :key="courtOption" :value="courtOption">
+                  {{ courtOption }}
+                </option>
+              </select>
             </template>
-             <template v-slot:[`item.actions`]="{ index }">
-                <v-btn icon size="small" color="error" @click="removeAdditionalMatch(index)">
-                    <v-icon>mdi-delete</v-icon>
-                </v-btn>
+            <template v-slot:[`item.match_order_no`]="{ item }">
+              <input
+                type="number"
+                v-model.number="item.match_order_no"
+                @input="updateMatchSchedule(item, 'order', $event.target.value)"
+                min="1"
+                placeholder="No."
+                class="custom-input match-order-input"
+              />
             </template>
+            <!-- アクション列を削除 -->
           </v-data-table>
         </div>
         <div v-else>
@@ -187,6 +203,8 @@
         </div>
 
         <v-divider class="my-4"></v-divider>
+        <!-- 順位データ (開発用表示) は一時的に非表示にします -->
+        <!--
         <h3 class="text-h6 mb-2">順位データ</h3>
         <v-btn color="orange" class="mb-4" @click="calculateStandings" :disabled="initialMatches.length === 0">
             <v-icon left>mdi-calculator</v-icon>
@@ -212,6 +230,7 @@
         <div v-else>
           <p>順位データはまだありません。「順位を計算」ボタンを押してください。</p>
         </div>
+        -->
 
       </div>
       <div v-else>
@@ -244,13 +263,17 @@ export default {
       type: Array,
       default: () => [],
     },
+    numberOfCourts: {
+      type: Number,
+      default: 0,
+    }
   },
   emits: ['show-snackbar'],
   setup(props, { emit }) {
     const pentagonParticipantsOrder = ref([]);
     const initialMatches = ref([]);
     const additionalMatches = ref([]);
-    const standingsData = ref({});
+    const standingsData = ref({}); // データ構造は残すが、このビューでは使用しない
 
     const loadingGenerate = ref(false);
     const loadingSave = ref(false);
@@ -274,17 +297,8 @@ export default {
     const matchHeaders = [
       { text: '選手1', value: 'player1' },
       { text: '選手2', value: 'player2' },
-      { text: 'スコア', value: 'score', sortable: false },
-      { text: 'ステータス', value: 'status' },
-      { text: 'アクション', value: 'actions', sortable: false },
-    ];
-
-    const standingsHeaders = [
-      { text: '順位', value: 'rank' },
-      { text: '選手名', value: 'playerName' },
-      { text: '勝数', value: 'wins' },
-      { text: '負数', value: 'losses' },
-      { text: '得失点差', value: 'differential' },
+      { text: 'コート', value: 'court_id', sortable: false, width: '80px' },
+      { text: '試合順', value: 'match_order_no', sortable: false, width: '80px' },
     ];
 
     const showSnackbar = (text, color) => {
@@ -308,18 +322,17 @@ export default {
       };
     };
 
-    // ★SVG表示と座標の定数を調整
-    const svgSize = 350; // SVG全体の表示サイズを大きくする
-    const viewBoxSize = 120; // viewBoxの幅と高さを調整
-    const centerX = viewBoxSize / 2; // viewBoxの中心X座標
-    const centerY = viewBoxSize / 2; // viewBoxの中心Y座標
-    const pentagonRadius = 35; // 五角形の半径を少し小さくする
+    const svgSize = 350;
+    const viewBoxSize = 120;
+    const centerX = viewBoxSize / 2;
+    const centerY = viewBoxSize / 2;
+    const pentagonRadius = 35;
     const visualBoxWidth = 40;
-    const visualBoxHeight = 20; // 選手ボックスの高さを調整
+    const visualBoxHeight = 20;
 
     const pentagonPoints = computed(() => {
         const points = [];
-        const startAngle = -Math.PI / 2; // 真上 (Y軸上方向)
+        const startAngle = -Math.PI / 2;
         for (let i = 0; i < 5; i++) {
             const angle = startAngle + (i * 2 * Math.PI / 5);
             const x = centerX + pentagonRadius * Math.cos(angle);
@@ -331,7 +344,7 @@ export default {
 
     const playerVisualPositions = computed(() => {
         const positions = [];
-        const startAngle = -Math.PI / 2; // 真上 (Y軸上方向)
+        const startAngle = -Math.PI / 2;
         for (let i = 0; i < 5; i++) {
             const angle = startAngle + (i * 2 * Math.PI / 5);
             const x = centerX + pentagonRadius * Math.cos(angle);
@@ -339,6 +352,14 @@ export default {
             positions.push({ x, y });
         }
         return positions;
+    });
+
+    const availableCourtOptions = computed(() => {
+      const courts = [];
+      for (let i = 0; i < props.numberOfCourts; i++) {
+        courts.push(String.fromCharCode(65 + i));
+      }
+      return courts;
     });
 
     const generatePentagonParticipantsOrder = () => {
@@ -371,17 +392,33 @@ export default {
 
         loadingGenerate.value = true;
         const newInitialMatches = [];
-        for (let i = 0; i < 5; i++) {
-            const player1 = pentagonParticipantsOrder.value[i];
-            const player2 = pentagonParticipantsOrder.value[(i + 1) % 5];
+        const participants = pentagonParticipantsOrder.value; // A=P0, B=P1, C=P2, D=P3, E=P4
+
+        // 五角形戦の初期試合の定義と順序
+        // プレイヤーインデックス: 0=A, 1=B, 2=C, 3=D, 4=E (時計回り)
+        // 青/白のルール: 上が青/下が白, 左が青/右が白
+        const matchDefinitions = [
+            { p1_idx: 0, p2_idx: 1 }, // AvsB (A:左/上, B:右/下 -> Aが青, Bが白)
+            { p1_idx: 3, p2_idx: 2 }, // DvsC (D:左/上, C:右/下 -> Dが青, Cが白)
+            { p1_idx: 0, p2_idx: 4 }, // AvsE (A:右, E:左 -> Aが青, Eが白) - 修正済み
+            { p1_idx: 1, p2_idx: 2 }, // BvsC (B:上, C:下 -> Bが青, Cが白)
+            { p1_idx: 4, p2_idx: 3 }  // EvsD (E:上, D:下 -> Eが青, Dが白)
+        ];
+
+        matchDefinitions.forEach(def => {
+            const player1 = participants[def.p1_idx];
+            const player2 = participants[def.p2_idx];
             newInitialMatches.push({
-                matchId: `${player1.player_id}-${player2.player_id}`,
+                matchId: `${player1.player_id}-${player2.player_id}`, // 試合IDはplayer1-player2の順で生成
                 player1: player1,
                 player2: player2,
-                score: '',
-                status: '未開始'
+                score: '', // スコアプロパティは維持
+                status: '未開始',
+                court_id: null,
+                match_order_no: null
             });
-        }
+        });
+
         initialMatches.value = newInitialMatches;
         additionalMatches.value = [];
         standingsData.value = {};
@@ -389,79 +426,22 @@ export default {
         showSnackbar('初期試合を生成しました！', 'success');
     };
 
-    const addAdditionalMatch = (baseMatch) => {
-        additionalMatches.value.push({
-            matchId: `add-${Date.now()}`,
-            player1: baseMatch ? { ...baseMatch.player1 } : null,
-            player2: baseMatch ? { ...baseMatch.player2 } : null,
-            score: '',
-            status: '未開始',
-            isAdditional: true
-        });
-        showSnackbar('追加試合を追加しました。', 'info');
+    // addAdditionalMatch 関数から baseMatch 引数を削除
+    const addAdditionalMatch = () => {
+        // このビューでは追加試合の手動追加は行わないため、この関数は実際には呼び出されません
+        // ただし、もし将来的に必要になった場合に備えて残しておきますが、
+        // UIからは削除されているため、ここでの実装は省略します。
+        console.warn("addAdditionalMatch is called, but this functionality is currently disabled in UI.");
     };
 
-    const removeAdditionalMatch = (index) => {
-        additionalMatches.value.splice(index, 1);
-        showSnackbar('追加試合を削除しました。', 'info');
+    // removeAdditionalMatch 関数から index 引数を削除
+    const removeAdditionalMatch = () => {
+        // このビューでは追加試合の手動削除は行わないため、この関数は実際には呼び出されません
+        console.warn("removeAdditionalMatch is called, but this functionality is currently disabled in UI.");
     };
 
-    const calculateStandings = () => {
-        const allMatches = [...initialMatches.value, ...additionalMatches.value];
-        const playerScores = {};
-
-        pentagonParticipantsOrder.value.forEach(player => {
-            playerScores[player.player_id] = {
-                wins: 0,
-                losses: 0,
-                differential: 0,
-                player: player
-            };
-        });
-
-        allMatches.forEach(match => {
-            if (!match.score || !match.score.includes('-')) return;
-
-            const [score1, score2] = match.score.split('-').map(Number);
-
-            const p1 = match.player1.player_id;
-            const p2 = match.player2.player_id;
-
-            if (isNaN(score1) || isNaN(score2)) return;
-
-            const diff = score1 - score2;
-            playerScores[p1].differential += diff;
-            playerScores[p2].differential -= diff;
-
-            if (score1 > score2) {
-                playerScores[p1].wins += 1;
-                playerScores[p2].losses += 1;
-            } else if (score2 > score1) {
-                playerScores[p2].wins += 1;
-                playerScores[p1].losses += 1;
-            }
-        });
-
-        const sortedStandings = Object.values(playerScores).sort((a, b) => {
-            if (b.wins !== a.wins) {
-                return b.wins - a.wins;
-            }
-            if (b.differential !== a.differential) {
-                return b.differential - a.differential;
-            }
-            return 0;
-        }).map((data, index) => ({
-            rank: index + 1,
-            ...data
-        }));
-
-        standingsData.value = { players: sortedStandings };
-        showSnackbar('順位を計算しました！', 'success');
-    };
-
-    const computedStandings = computed(() => {
-        return standingsData.value.players || [];
-    });
+    // calculateStandings 関数は削除
+    // computedStandings は削除
 
     const savePentagonMatches = async () => {
       if (!props.tournamentId || !props.categoryId) {
@@ -481,7 +461,7 @@ export default {
           pentagon_participants_order: pentagonParticipantsOrder.value,
           initial_matches: initialMatches.value,
           additional_matches: additionalMatches.value,
-          standings_data: standingsData.value,
+          standings_data: standingsData.value, // データ構造は保存する
         });
 
         if (response.data.success) {
@@ -509,8 +489,22 @@ export default {
 
         if (response.data.success) {
           pentagonParticipantsOrder.value = response.data.pentagon_participants_order || [];
-          initialMatches.value = response.data.initial_matches || [];
-          additionalMatches.value = response.data.additional_matches || [];
+          const loadedInitialMatches = response.data.initial_matches || [];
+          const loadedAdditionalMatches = response.data.additional_matches || [];
+
+          loadedInitialMatches.forEach(match => {
+            if (!('court_id' in match)) match.court_id = null;
+            if (!('match_order_no' in match)) match.match_order_no = null;
+            if (!('score' in match)) match.score = '';
+          });
+          loadedAdditionalMatches.forEach(match => {
+            if (!('court_id' in match)) match.court_id = null;
+            if (!('match_order_no' in match)) match.match_order_no = null;
+            if (!('score' in match)) match.score = '';
+          });
+
+          initialMatches.value = loadedInitialMatches;
+          additionalMatches.value = loadedAdditionalMatches;
           standingsData.value = response.data.standings_data || {};
 
           showSnackbar('五角形戦データを読み込みました！', 'success');
@@ -537,6 +531,20 @@ export default {
       }
     };
 
+    const updateMatchSchedule = (match, type, value) => {
+      if (match) {
+        if (type === 'court') {
+          match.court_id = value;
+        } else if (type === 'order') {
+          match.match_order_no = value === '' ? null : parseInt(value, 10);
+          if (isNaN(match.match_order_no)) {
+            match.match_order_no = null;
+          }
+        }
+        console.log(`Match ${match.matchId} updated:`, match);
+      }
+    };
+
     watch([() => props.tournamentId, () => props.categoryId], ([newTournamentId, newCategoryId]) => {
       if (newTournamentId && newCategoryId) {
         loadPentagonMatches();
@@ -557,23 +565,22 @@ export default {
       loadingSave,
       loadingLoad,
       matchHeaders,
-      standingsHeaders,
-      computedStandings,
       generatePentagonParticipantsOrder,
       generateInitialMatches,
       savePentagonMatches,
       loadPentagonMatches,
       getPlayerFullNameWithBranchAndXclass,
       svgSize,
-      viewBoxSize, // 新しい変数
+      viewBoxSize,
       pentagonPoints,
       playerVisualPositions,
       visualBoxWidth,
       visualBoxHeight,
       currentPentagonPlayers,
-      addAdditionalMatch,
-      removeAdditionalMatch,
-      calculateStandings,
+      addAdditionalMatch, // 関数自体は残す
+      removeAdditionalMatch, // 関数自体は残す
+      availableCourtOptions,
+      updateMatchSchedule,
     };
   },
 };
@@ -598,7 +605,7 @@ export default {
   background-color: #e3f2fd; /* Light blue background */
   border: 1px solid #90CAF9; /* Blue border */
   border-radius: 4px;
-  padding: 2px; /* ★paddingを増やす */
+  padding: 2px; /* paddingを増やす */
   text-align: center;
   box-sizing: border-box;
   color: #1a237e;
@@ -665,5 +672,62 @@ export default {
 }
 .red-border {
     border: 1px solid red !important;
+}
+
+/* 試合スケジュール入力欄のスタイル (v-data-table内用) */
+/* v-data-tableのセル内でFlexboxを使うための調整 */
+.v-data-table :deep(.v-data-table__td) {
+  vertical-align: top; /* セルの内容を上部に揃える */
+}
+
+.match-schedule-inputs {
+  display: flex;
+  gap: 4px; /* 入力フィールド間の隙間 */
+  align-items: center; /* 垂直方向中央揃え */
+  justify-content: flex-start; /* 左寄せ (スコア入力がないため) */
+  margin-top: 4px; /* スコア入力との間に少し余白 */
+}
+
+.custom-input {
+  max-width: 42px; /* 幅を調整 */
+  min-width: 20px;
+  height: 24px; /* 高さを調整 */
+  font-size: 0.8em; /* フォントサイズを調整 */
+  padding: 0 3px; /* パディングを調整 */
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  box-sizing: border-box;
+  background-color: white;
+  color: #333;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.custom-input::-webkit-outer-spin-button,
+.custom-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.court-select {
+  padding-right: 12px; /* ドロップダウンアイコンのスペースを確保 */
+  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-6.5%200-12.3%203.2-15.6%208.1-3.3%204.9-3.3%2011.2%200%2016.1l132%20126.7c3.3%203.2%208.3%203.2%2011.6%200l132-126.7c3.3-4.9%203.3-11.2%200-16.1z%22%2F%3E%3C%2Fsvg%3E');
+  background-repeat: no-repeat;
+  background-position: right 2px center; /* アイコンの位置 */
+  background-size: 9px; /* アイコンのサイズ */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.custom-input:focus {
+  outline: none;
+  border-color: #3f51b5;
+  box-shadow: 0 0 0 1px #3f51b5;
+}
+
+.custom-input::placeholder {
+  color: #999;
+  font-size: 0.8em;
 }
 </style>
