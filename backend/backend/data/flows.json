@@ -3727,39 +3727,6 @@
         "wires": []
     },
     {
-        "id": "df03661d236f22ce",
-        "type": "catch",
-        "z": "059d960ae3fa1ba9",
-        "name": "Catch Errors",
-        "scope": null,
-        "uncaught": false,
-        "x": 480,
-        "y": 1120,
-        "wires": [
-            [
-                "o9p8q7r6s5t4u3v2",
-                "ca565cb21c15693f"
-            ]
-        ]
-    },
-    {
-        "id": "o9p8q7r6s5t4u3v2",
-        "type": "debug",
-        "z": "059d960ae3fa1ba9",
-        "name": "Error Debug",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 720,
-        "y": 1120,
-        "wires": []
-    },
-    {
         "id": "b6881dd9c13f0b11",
         "type": "function",
         "z": "059d960ae3fa1ba9",
@@ -3780,22 +3747,304 @@
         ]
     },
     {
-        "id": "ca565cb21c15693f",
+        "id": "error_handler_all_matches",
+        "type": "catch",
+        "z": "059d960ae3fa1ba9",
+        "name": "Error Handler",
+        "scope": [],
+        "uncaught": false,
+        "x": 90,
+        "y": 1420,
+        "wires": [
+            [
+                "d00ded6ca2276e4e",
+                "set_error_response_all_matches"
+            ]
+        ]
+    },
+    {
+        "id": "set_error_response_all_matches",
         "type": "function",
         "z": "059d960ae3fa1ba9",
-        "name": "Error Response",
-        "func": "msg.statusCode = 500;\nmsg.payload = { success: false, message: msg.error ? msg.error.message : \"サーバー側でスケジュールの保存に失敗しました。\" };\nreturn msg;",
+        "name": "Set Error Response",
+        "func": "msg.statusCode = 500;\nmsg.payload = {\n    success: false,\n    message: \"試合データの取得中にエラーが発生しました。\",\n    error: msg.error ? msg.error.message : '不明なエラー'\n};\nreturn msg;",
         "outputs": 1,
+        "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1300,
-        "y": 1120,
+        "x": 450,
+        "y": 1420,
         "wires": [
             [
-                "y5z4a3b2c1d0e9f8"
+                "http_response_all_matches_error"
             ]
         ]
+    },
+    {
+        "id": "http_response_all_matches_error",
+        "type": "http response",
+        "z": "059d960ae3fa1ba9",
+        "name": "HTTP Response (Error)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 730,
+        "y": 1420,
+        "wires": []
+    },
+    {
+        "id": "d00ded6ca2276e4e",
+        "type": "debug",
+        "z": "059d960ae3fa1ba9",
+        "name": "Error Debug",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 250,
+        "y": 1480,
+        "wires": []
+    },
+    {
+        "id": "prepare_category_query_v2",
+        "type": "function",
+        "z": "059d960ae3fa1ba9",
+        "name": "Prepare Category Query (V2)",
+        "func": "const tournamentId = msg.req.params.tournament_id;\nmsg.query = `SELECT tcm.category_id, cm.category_nm \n             FROM public.tournament_category_map tcm \n             JOIN public.category_m cm ON tcm.category_id = cm.category_id \n             WHERE tcm.tournament_id = '${tournamentId}';`;\nmsg.tournamentId = tournamentId; // ★ここで tournamentId を msg に追加\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 1220,
+        "wires": [
+            [
+                "get_categories_db_v2"
+            ]
+        ]
+    },
+    {
+        "id": "get_categories_db_v2",
+        "type": "postgresql",
+        "z": "059d960ae3fa1ba9",
+        "name": "Get Categories (V2)",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 660,
+        "y": 1220,
+        "wires": [
+            [
+                "prepare_all_match_queries_v3"
+            ]
+        ]
+    },
+    {
+        "id": "prepare_all_match_queries_v3",
+        "type": "function",
+        "z": "059d960ae3fa1ba9",
+        "name": "Prepare All Match Queries (V3)",
+        "func": "const categories = msg.payload;\nconst tournamentId = msg.tournamentId; // ★msg から tournamentId を取得\nconst originalReq = msg.req;\nconst originalRes = msg.res;\n\nconst queryMessages = [];\n\nif (categories.length === 0) {\n    msg.payload = { success: true, matches: [] };\n    msg.statusCode = 200;\n    return msg;\n}\n\nflow.set('all_categories_meta', categories);\nflow.set('original_http_req', originalReq);\nflow.set('original_http_res', originalRes);\n\nflow.set('collected_matches', []);\nflow.set('expected_query_count', categories.length * 3);\n\ncategories.forEach(cat => {\n    const categoryId = cat.category_id;\n\n    queryMessages.push({\n        query: `SELECT bracket_data FROM tournament_brackets WHERE tournament_id = '${tournamentId}' AND category_id = '${categoryId}';`,\n        _categoryId: categoryId,\n        _combinationType: 'tournament'\n    });\n\n    queryMessages.push({\n        query: `SELECT match_results_data FROM league_brackets WHERE tournament_id = '${tournamentId}' AND category_id = '${categoryId}';`,\n        _categoryId: categoryId,\n        _combinationType: 'league'\n    });\n\n    queryMessages.push({\n        query: `SELECT initial_matches, additional_matches FROM pentagon_brackets WHERE tournament_id = '${tournamentId}' AND category_id = '${categoryId}';`,\n        _categoryId: categoryId,\n        _combinationType: 'pentagon'\n    });\n});\n\nqueryMessages.forEach(qMsg => {\n    node.send(qMsg);\n});\n\nreturn null;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 910,
+        "y": 1220,
+        "wires": [
+            [
+                "get_match_data_db_v3"
+            ]
+        ]
+    },
+    {
+        "id": "get_match_data_db_v3",
+        "type": "postgresql",
+        "z": "059d960ae3fa1ba9",
+        "name": "Get Match Data (V3)",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 1160,
+        "y": 1220,
+        "wires": [
+            [
+                "combine_results_v3"
+            ]
+        ]
+    },
+    {
+        "id": "combine_results_v3",
+        "type": "function",
+        "z": "059d960ae3fa1ba9",
+        "name": "Combine Results (V3)",
+        "func": "let collectedMatches = flow.get('collected_matches') || [];\nlet expectedCount = flow.get('expected_query_count');\nlet allCategoriesMeta = flow.get('all_categories_meta');\nlet originalReq = flow.get('original_http_req');\nlet originalRes = flow.get('original_http_res');\n\ncollectedMatches.push(msg);\nflow.set('collected_matches', collectedMatches);\n\nexpectedCount--;\nflow.set('expected_query_count', expectedCount);\n\nif (expectedCount === 0) {\n    const allNormalizedMatches = [];\n    const categoriesMap = new Map();\n\n    if (allCategoriesMeta) {\n        allCategoriesMeta.forEach(cat => {\n            categoriesMap.set(cat.category_id, cat.category_nm);\n        });\n    }\n\n    const parseJsonb = (val) => {\n        if (typeof val === 'string') {\n            try { return JSON.parse(val); } catch (e) { return val; }\n        } else {\n            return val;\n        }\n    };\n\n    collectedMatches.forEach(item => {\n        if (item.payload && item.payload.length > 0) {\n            const categoryId = item._categoryId;\n            const combinationType = item._combinationType;\n            const categoryNm = categoriesMap.get(categoryId) || '不明なカテゴリー';\n\n            item.payload.forEach(dbRow => {\n                if (combinationType === 'tournament') {\n                    const bracketData = parseJsonb(dbRow.bracket_data);\n                    if (Array.isArray(bracketData)) {\n                        bracketData.forEach(round => {\n                            if (Array.isArray(round)) {\n                                round.forEach(match => {\n                                    // ここにあったフィルタリング条件を削除しました\n                                    allNormalizedMatches.push({\n                                        matchId: match.matchId,\n                                        player1: match.player1,\n                                        player2: match.player2,\n                                        court_id: match.court_id,\n                                        match_order_no: match.match_order_no,\n                                        combination_type: 'トーナメント戦',\n                                        category_id: categoryId,\n                                        category_nm: categoryNm,\n                                    });\n                                });\n                            }\n                        });\n                    }\n                } else if (combinationType === 'league') {\n                    const matchResultsData = parseJsonb(dbRow.match_results_data);\n                    if (Array.isArray(matchResultsData)) {\n                        matchResultsData.forEach(match => {\n                            allNormalizedMatches.push({\n                                matchId: match.matchId,\n                                player1: match.player1_data,\n                                player2: match.player2_data,\n                                court_id: match.court_id,\n                                match_order_no: match.match_order_no,\n                                combination_type: 'リーグ戦',\n                                category_id: categoryId,\n                                category_nm: categoryNm,\n                            });\n                        });\n                    }\n                }\n                else if (combinationType === 'pentagon') {\n                    const initialMatches = parseJsonb(dbRow.initial_matches);\n                    const additionalMatches = parseJsonb(dbRow.additional_matches);\n\n                    if (Array.isArray(initialMatches)) {\n                        initialMatches.forEach(match => {\n                            allNormalizedMatches.push({\n                                matchId: match.matchId,\n                                player1: match.player1,\n                                player2: match.player2,\n                                court_id: match.court_id,\n                                match_order_no: match.match_order_no,\n                                combination_type: '五角形戦',\n                                category_id: categoryId,\n                                category_nm: categoryNm,\n                            });\n                        });\n                    }\n                    if (Array.isArray(additionalMatches)) {\n                        additionalMatches.forEach(match => {\n                            allNormalizedMatches.push({\n                                matchId: match.matchId,\n                                player1: match.player1,\n                                player2: match.player2,\n                                court_id: match.court_id,\n                                match_order_no: match.match_order_no,\n                                combination_type: '五角形戦',\n                                category_id: categoryId,\n                                category_nm: categoryNm,\n                            });\n                        });\n                    }\n                }\n            });\n        }\n    });\n\n    const responseMsg = {\n        req: originalReq,\n        res: originalRes,\n        statusCode: 200,\n        payload: {\n            success: true,\n            matches: allNormalizedMatches\n        }\n    };\n\n    flow.set('collected_matches', []);\n    flow.set('expected_query_count', 0);\n    flow.set('all_categories_meta', null);\n    flow.set('original_http_req', null);\n    flow.set('original_http_res', null);\n\n    return responseMsg;\n} else {\n    return null;\n}\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1380,
+        "y": 1220,
+        "wires": [
+            [
+                "http_response_all_matches"
+            ]
+        ]
+    },
+    {
+        "id": "http_response_all_matches",
+        "type": "http response",
+        "z": "059d960ae3fa1ba9",
+        "name": "HTTP Response (All Matches)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1630,
+        "y": 1220,
+        "wires": []
+    },
+    {
+        "id": "new_flow_tab_id_get_all_matches",
+        "type": "http in",
+        "z": "059d960ae3fa1ba9",
+        "name": "Get All Tournament Matches",
+        "url": "/api/tournament-matches/:tournament_id",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 1320,
+        "wires": [
+            [
+                "cd9815a53a0200ef"
+            ]
+        ]
+    },
+    {
+        "id": "cd9815a53a0200ef",
+        "type": "function",
+        "z": "059d960ae3fa1ba9",
+        "name": "Prepare Category Query (V2)",
+        "func": "const tournamentId = msg.req.params.tournament_id;\nmsg.query = `SELECT tcm.category_id, cm.category_nm \n             FROM public.tournament_category_map tcm \n             JOIN public.category_m cm ON tcm.category_id = cm.category_id \n             WHERE tcm.tournament_id = '${tournamentId}';`;\nmsg.tournamentId = tournamentId; // ★ここで tournamentId を msg に追加\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 1320,
+        "wires": [
+            [
+                "f89cfc0fc340801d"
+            ]
+        ]
+    },
+    {
+        "id": "f89cfc0fc340801d",
+        "type": "postgresql",
+        "z": "059d960ae3fa1ba9",
+        "name": "Get Categories (V2)",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 660,
+        "y": 1320,
+        "wires": [
+            [
+                "31d7d050ae05b8c9"
+            ]
+        ]
+    },
+    {
+        "id": "31d7d050ae05b8c9",
+        "type": "function",
+        "z": "059d960ae3fa1ba9",
+        "name": "Prepare All Match Queries (V3)",
+        "func": "const categories = msg.payload;\nconst tournamentId = msg.tournamentId; // ★msg から tournamentId を取得\nconst originalReq = msg.req;\nconst originalRes = msg.res;\n\nconst queryMessages = [];\n\nif (categories.length === 0) {\n    msg.payload = { success: true, matches: [] };\n    msg.statusCode = 200;\n    return msg;\n}\n\nflow.set('all_categories_meta', categories);\nflow.set('original_http_req', originalReq);\nflow.set('original_http_res', originalRes);\n\nflow.set('collected_matches', []);\nflow.set('expected_query_count', categories.length * 3);\n\ncategories.forEach(cat => {\n    const categoryId = cat.category_id;\n\n    queryMessages.push({\n        query: `SELECT bracket_data FROM tournament_brackets WHERE tournament_id = '${tournamentId}' AND category_id = '${categoryId}';`,\n        _categoryId: categoryId,\n        _combinationType: 'tournament'\n    });\n\n    queryMessages.push({\n        query: `SELECT match_results_data FROM league_brackets WHERE tournament_id = '${tournamentId}' AND category_id = '${categoryId}';`,\n        _categoryId: categoryId,\n        _combinationType: 'league'\n    });\n\n    queryMessages.push({\n        query: `SELECT initial_matches, additional_matches FROM pentagon_brackets WHERE tournament_id = '${tournamentId}' AND category_id = '${categoryId}';`,\n        _categoryId: categoryId,\n        _combinationType: 'pentagon'\n    });\n});\n\nqueryMessages.forEach(qMsg => {\n    node.send(qMsg);\n});\n\nreturn null;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 910,
+        "y": 1320,
+        "wires": [
+            [
+                "abb89e1f00ce78eb"
+            ]
+        ]
+    },
+    {
+        "id": "abb89e1f00ce78eb",
+        "type": "postgresql",
+        "z": "059d960ae3fa1ba9",
+        "name": "Get Match Data (V3)",
+        "query": "",
+        "postgreSQLConfig": "aab57a20387da7cf",
+        "split": false,
+        "rowsPerMsg": "",
+        "outputs": 1,
+        "x": 1160,
+        "y": 1320,
+        "wires": [
+            [
+                "65680c977b54f795"
+            ]
+        ]
+    },
+    {
+        "id": "65680c977b54f795",
+        "type": "function",
+        "z": "059d960ae3fa1ba9",
+        "name": "Combine Results (V3)",
+        "func": "let collectedMatches = flow.get('collected_matches') || [];\nlet expectedCount = flow.get('expected_query_count');\nlet allCategoriesMeta = flow.get('all_categories_meta');\nlet originalReq = flow.get('original_http_req');\nlet originalRes = flow.get('original_http_res');\n\ncollectedMatches.push(msg);\nflow.set('collected_matches', collectedMatches);\n\nexpectedCount--;\nflow.set('expected_query_count', expectedCount);\n\nif (expectedCount === 0) {\n    const allNormalizedMatches = [];\n    const categoriesMap = new Map();\n\n    if (allCategoriesMeta) {\n        allCategoriesMeta.forEach(cat => {\n            categoriesMap.set(cat.category_id, cat.category_nm);\n        });\n    }\n\n    const parseJsonb = (val) => {\n        if (typeof val === 'string') {\n            try { return JSON.parse(val); } catch (e) { return val; }\n        } else {\n            return val;\n        }\n    };\n\n    // BYE選手を判定するヘルパー関数\n    const isPlayerBye = (player) => {\n        // playerがオブジェクトであり、isByeがtrue、またはnameが\"BYE\"の場合にBYEと判定\n        return player && (player.isBye === true || player.name === 'BYE');\n    };\n\n    collectedMatches.forEach(item => {\n        if (item.payload && item.payload.length > 0) {\n            const categoryId = item._categoryId;\n            const combinationType = item._combinationType;\n            const categoryNm = categoriesMap.get(categoryId) || '不明なカテゴリー';\n\n            item.payload.forEach(dbRow => {\n                if (combinationType === 'tournament') {\n                    const bracketData = parseJsonb(dbRow.bracket_data);\n                    if (Array.isArray(bracketData)) {\n                        bracketData.forEach(round => {\n                            if (Array.isArray(round)) {\n                                round.forEach(match => {\n                                    // プレイヤーデータを取得\n                                    const player1Obj = match.player1_data || match.player1;\n                                    const player2Obj = match.player2_data || match.player2;\n\n                                    // BYE試合かどうかを判定\n                                    const isByeMatch = isPlayerBye(player1Obj) || isPlayerBye(player2Obj);\n\n                                    if (!isByeMatch) { // 不戦勝ではない場合のみ追加\n                                        allNormalizedMatches.push({\n                                            matchId: match.match_id || match.matchId,\n                                            player1: player1Obj, // オブジェクトのまま格納\n                                            player2: player2Obj, // オブジェクトのまま格納\n                                            court_id: match.court_id,\n                                            match_order_no: match.match_order_no,\n                                            combination_type: 'トーナメント戦',\n                                            category_id: categoryId,\n                                            category_nm: categoryNm,\n                                        });\n                                    }\n                                });\n                            }\n                        });\n                    }\n                } else if (combinationType === 'league') {\n                    const matchResultsData = parseJsonb(dbRow.match_results_data);\n                    if (Array.isArray(matchResultsData)) {\n                        matchResultsData.forEach(match => {\n                            allNormalizedMatches.push({\n                                matchId: match.match_id || match.matchId,\n                                player1: match.player1_data,\n                                player2: match.player2_data,\n                                court_id: match.court_id,\n                                match_order_no: match.match_order_no,\n                                combination_type: 'リーグ戦',\n                                category_id: categoryId,\n                                category_nm: categoryNm,\n                            });\n                        });\n                    }\n                }\n                else if (combinationType === 'pentagon') {\n                    const initialMatches = parseJsonb(dbRow.initial_matches);\n                    const additionalMatches = parseJsonb(dbRow.additional_matches);\n\n                    if (Array.isArray(initialMatches)) {\n                        initialMatches.forEach(match => {\n                            const player1Obj = match.player1_data || match.player1;\n                            const player2Obj = match.player2_data || match.player2;\n                            const isByeMatch = isPlayerBye(player1Obj) || isPlayerBye(player2Obj);\n\n                            if (!isByeMatch) {\n                                allNormalizedMatches.push({\n                                    matchId: match.match_id || match.matchId,\n                                    player1: player1Obj,\n                                    player2: player2Obj,\n                                    court_id: match.court_id,\n                                    match_order_no: match.match_order_no,\n                                    combination_type: '五角形戦',\n                                    category_id: categoryId,\n                                    category_nm: categoryNm,\n                                });\n                            }\n                        });\n                    }\n                    if (Array.isArray(additionalMatches)) {\n                        additionalMatches.forEach(match => {\n                            const player1Obj = match.player1_data || match.player1;\n                            const player2Obj = match.player2_data || match.player2;\n                            const isByeMatch = isPlayerBye(player1Obj) || isPlayerBye(player2Obj);\n\n                            if (!isByeMatch) {\n                                allNormalizedMatches.push({\n                                    matchId: match.match_id || match.matchId,\n                                    player1: player1Obj,\n                                    player2: player2Obj,\n                                    court_id: match.court_id,\n                                    match_order_no: match.match_order_no,\n                                    combination_type: '五角形戦',\n                                    category_id: categoryId,\n                                    category_nm: categoryNm,\n                                });\n                            }\n                        });\n                    }\n                }\n            });\n        }\n    });\n\n    const responseMsg = {\n        req: originalReq,\n        res: originalRes,\n        statusCode: 200,\n        payload: {\n            success: true,\n            matches: allNormalizedMatches\n        }\n    };\n\n    flow.set('collected_matches', []);\n    flow.set('expected_query_count', 0);\n    flow.set('all_categories_meta', null);\n    flow.set('original_http_req', null);\n    flow.set('original_http_res', null);\n\n    return responseMsg;\n} else {\n    return null;\n}\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1380,
+        "y": 1320,
+        "wires": [
+            [
+                "81836a068f0ff8d4"
+            ]
+        ]
+    },
+    {
+        "id": "81836a068f0ff8d4",
+        "type": "http response",
+        "z": "059d960ae3fa1ba9",
+        "name": "HTTP Response (All Matches)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 1630,
+        "y": 1320,
+        "wires": []
     }
 ]

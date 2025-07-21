@@ -37,8 +37,8 @@
           <v-list-item-title>組み合わせ作成</v-list-item-title>
         </v-list-item>
 
-        <v-list-item to="/match-scheduler" link prepend-icon="mdi-calendar-edit">
-          <v-list-item-title>試合スケジューリング</v-list-item-title>
+        <v-list-item to="/match-order-check" link prepend-icon="mdi-check-circle-outline">
+          <v-list-item-title>試合順のチェック</v-list-item-title>
         </v-list-item>
         <v-divider></v-divider>
 

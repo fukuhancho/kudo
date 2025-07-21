@@ -10,9 +10,8 @@ services:
     volumes:
       - ./frontend:/app # ホストの frontend ディレクトリをコンテナの /app にマウント
       - /app/node_modules # node_modules はコンテナ内に保持 (ホストに生成されないように)
-    # 開発時にコンテナを起動したままにするためのコマンド
-    # Vue CLI の開発サーバーは手動で起動することを想定
-    command: sh -c "npm install && tail -F /dev/null"
+    # 開発サーバーを自動起動するコマンド
+    command: ["npm", "run", "serve"] 
     environment:
       # Node.jsのバージョンに合わせて調整
       NODE_OPTIONS: --max-old-space-size=4096 # メモリ不足エラー対策 (必要であれば)

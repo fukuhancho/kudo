@@ -6,13 +6,11 @@ WORKDIR /app
 # パッケージインストールと依存関係のキャッシュを考慮し、package.jsonとpackage-lock.jsonを先にコピー
 COPY package*.json ./
 
-# 開発用なので、Node.jsのバージョンに合わせたnpmやyarnのバージョンをインストール
-RUN npm install -g @vue/cli
+# 依存関係をインストール
+RUN npm install
 
 # すべてのファイルコピー
 COPY . .
 
-# Vue CLI サービスを起動するためのコマンドは手動で行うため、ここでは何もしない
-# Vue CLI の開発サーバーは `npm run serve` で起動する
-# 開発時には `docker-compose exec frontend npm run serve` で起動することを想定
-CMD ["tail", "-F", "/dev/null"]
+# コンテナ起動時に開発サーバーを自動起動
+CMD ["npm", "run", "serve"]

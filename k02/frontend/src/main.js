@@ -20,7 +20,8 @@ const vuetify = createVuetify({
   components,
   directives,
   icons: {
-    iconfont: 'mdi', // Material Design Icons を使用
+    //iconfont: 'mdi', 
+    defaultSet: 'mdi', 
   },
   locale: {
     locale: 'ja', // デフォルトロケールを日本語に設定

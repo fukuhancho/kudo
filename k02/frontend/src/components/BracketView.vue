@@ -74,8 +74,8 @@
                       '--z-line-vertical-segment-height': getZLineVerticalSegmentHeight(roundIndex) + 'px'
                     }"
                   >
-                    <!-- 試合スケジュール入力欄: プレースホルダーの選手を含む試合でも表示 -->
-                    <div v-if="match && tournamentRounds.length > 0" class="match-schedule-inputs-top-right">
+                    <!-- 試合スケジュール入力欄: BYE選手を含む試合では非表示にする -->
+                    <div v-if="match && !isByeMatch(match)" class="match-schedule-inputs-top-right">
                       <!-- コート選択 (標準HTML select) -->
                       <select
                         v-model="match.court_id"
@@ -255,6 +255,16 @@ export default {
       emit('show-snackbar', text, color);
     };
 
+    // BYE選手を判定するヘルパー関数
+    const isByeMatch = (match) => {
+      const player1 = match.player1;
+      const player2 = match.player2;
+      // playerオブジェクトにisByeプロパティがあるか、またはnameが"BYE"の場合にBYEと判定
+      const isPlayer1Bye = player1 && (player1.isBye === true || player1.name === 'BYE');
+      const isPlayer2Bye = player2 && (player2.isBye === true || player2.name === 'BYE');
+      return isPlayer1Bye || isPlayer2Bye;
+    };
+
     const generateTournament = () => {
       loadingGenerate.value = true;
       tournamentRounds.value = [];
@@ -292,10 +302,10 @@ export default {
             player1: player,
             player2: { id: `BYE_${matchId}`, name: 'BYE', isBye: true },
             matchId: matchId,
-            court_id: null,
-            match_order_no: null
+            court_id: null, // BYE試合なのでコート・試合順はnullのまま
+            match_order_no: null // BYE試合なのでコート・試合順はnullのまま
           });
-          nextRoundAdvancingPlayers.push(player);
+          nextRoundAdvancingPlayers.push(player); // BYEの相手は次のラウンドに進む
         });
 
         for (let i = 0; i < playersPlaying.length; i += 2) {
@@ -334,16 +344,18 @@ export default {
 
       let currentRoundParticipants = [];
       tournamentRounds.value[0].forEach(match => {
+        // BYE試合の場合は、BYEではないプレイヤーを次のラウンドに進める
         if (match.player1 && match.player1.isBye) {
           currentRoundParticipants.push(match.player2);
         } else if (match.player2 && match.player2.isBye) {
           currentRoundParticipants.push(match.player1);
         } else {
+          // 通常の試合は勝者プレースホルダーを次のラウンドに進める
           currentRoundParticipants.push({ isWinnerPlaceholder: true, winnerOf: match.matchId });
         }
       });
 
-      tournamentRounds.value.splice(1);
+      tournamentRounds.value.splice(1); // ラウンド2以降をクリア
       finalWinner.value = null;
 
       let maxMatchIdInRound1 = 0;
@@ -423,7 +435,10 @@ export default {
           bracket_id: bracketId,
           tournament_id: props.tournamentId,
           category_id: props.categoryId,
-          bracket_data: JSON.stringify(tournamentRounds.value),
+          // BYE試合を除外して保存するために、保存前にフィルタリング
+          bracket_data: JSON.stringify(tournamentRounds.value.map(round =>
+            round.filter(match => !isByeMatch(match))
+          )),
           final_winner_data: finalWinner.value ? JSON.stringify(finalWinner.value) : null,
         };
 
@@ -561,7 +576,7 @@ export default {
     };
 
     const dragStart = (event, rIdx, mIdx, sType, player) => {
-      if (rIdx !== 0 || player?.isWinnerPlaceholder || player?.isBye) {
+      if (rIdx !== 0 || player?.isWinnerPlaceholder || isByeMatch({player1: player, player2: null})) { // BYE選手はドラッグ不可
         event.preventDefault();
         return;
       }
@@ -571,7 +586,7 @@ export default {
     };
 
     const dragOver = (event, rIdx, mIdx, sType) => {
-      if (rIdx !== 0 || tournamentRounds.value[rIdx][mIdx][sType]?.isWinnerPlaceholder) {
+      if (rIdx !== 0 || tournamentRounds.value[rIdx][mIdx][sType]?.isWinnerPlaceholder || isByeMatch({player1: tournamentRounds.value[rIdx][mIdx][sType], player2: null})) { // BYE選手へのドロップ不可
         return;
       }
       event.preventDefault();
@@ -583,7 +598,7 @@ export default {
     };
 
     const drop = (event, targetRIdx, targetMIdx, targetSType) => {
-      if (targetRIdx !== 0 || tournamentRounds.value[targetRIdx][targetMIdx][targetSType]?.isWinnerPlaceholder) {
+      if (targetRIdx !== 0 || tournamentRounds.value[targetRIdx][targetMIdx][targetSType]?.isWinnerPlaceholder || isByeMatch({player1: tournamentRounds.value[targetRIdx][targetMIdx][targetSType], player2: null})) { // BYE選手へのドロップ不可
         return;
       }
       event.preventDefault();
@@ -605,8 +620,9 @@ export default {
 
       const targetPlayer = tournamentRounds.value[targetRIdx][targetMIdx][targetSType];
 
-      if (sourcePlayer?.isBye || targetPlayer?.isBye) {
-        showSnackbar('BYEの選手は入れ替えできません。', 'warning');
+      // BYE選手が含まれる場合は入れ替え不可
+      if (isByeMatch({player1: sourcePlayer, player2: targetPlayer})) {
+        showSnackbar('BYEの選手が含まれる場合は入れ替えできません。', 'warning');
         draggedItem.value = null;
         return;
       }
@@ -667,6 +683,7 @@ export default {
       isDragOverTarget,
       updateMatchSchedule,
       availableCourtOptions,
+      isByeMatch, // テンプレートで使えるように公開
     };
   },
 };
