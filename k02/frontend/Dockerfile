@@ -7,10 +7,10 @@ WORKDIR /app
 COPY package*.json ./
 
 # 依存関係をインストール
-RUN npm install
+RUN npm install -g @vue/cli
 
 # すべてのファイルコピー
 COPY . .
 
-# コンテナ起動時に開発サーバーを自動起動
-CMD ["npm", "run", "serve"]
+# 開発時には `docker-compose exec frontend npm run serve` で起動することを想定
+CMD ["tail", "-F", "/dev/null"]
