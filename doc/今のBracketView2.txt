@@ -240,10 +240,11 @@ export default {
     let globalMatchIdCounter = 0;
 
     // 定数定義 (F12で確認されたbox-sizing: border-box;適用後の実際の合計視覚高さ)
-    const CSS_MATCH_BOX_HEIGHT = 153; 
-    const ACTUAL_MATCH_BOX_HEIGHT = 153; 
+    const CSS_MATCH_BOX_HEIGHT = 153; // F12で確認された通常の試合ボックスのコンテンツ高さ (box-sizing: content-box;の場合)
+                                      // しかし、box-sizing: border-box; なので、これは要素全体の高さ
+    const ACTUAL_MATCH_BOX_HEIGHT = 153; // F12で確認された通常の試合ボックスの全体の高さ
 
-    const ACTUAL_WINNER_BOX_HEIGHT = 42; 
+    const ACTUAL_WINNER_BOX_HEIGHT = 42; // F12で確認された優勝ボックスの全体の高さ
 
     // これらの定数はCSS変数としてテンプレートに渡されます
     const MATCH_PADDING_TOP = 35;
@@ -653,8 +654,7 @@ export default {
     };
 
     const getZLineVerticalSegmentHeight = (roundIndex) => {
-      // 垂直線の長さは、接続する2つの試合ボックスの中心間の垂直距離の倍数となる
-      // この値は、CSSの::after要素の高さとして使用され、その中で線が描画される
+      // 垂直線の長さは、隣接するラウンドの試合の中心間距離の倍数となる
       return TOTAL_MATCH_UNIT_HEIGHT * Math.pow(2, roundIndex);
     };
 
@@ -983,7 +983,7 @@ export default {
   content: '';
   position: absolute;
   left: 100%; /* 親要素の右端に::afterの左端を合わせる */
-  top: 50%; /* ::after要素の上端が親の試合ボックスの垂直中央に位置 */
+  top: 50%;
   transform: translateY(-0.5px); /* 1pxの線の厚さを考慮して正確に中央に配置 */
   /* ::after要素の幅は、2つの水平線セグメントを合わせたもの */
   width: calc(var(--line-segment-length) * 2);
@@ -993,23 +993,23 @@ export default {
   pointer-events: none;
 
   background:
-    /* 1. 最初の水平線 (親の試合ボックスの中心から伸びる) */
+    /* 1. 最初の水平線 (試合ボックスの中心から伸びる) */
     linear-gradient(to right, var(--line-color) 0%, var(--line-color) 100%)
-    0 0px /* Y: ::after要素の上端 (これが親の試合ボックスの垂直中央) */
+    0 0px /* X: ::afterの左端, Y: ::afterの上端 (これが試合ボックスの垂直中央) */
     / var(--line-segment-length) 1px /* サイズ: 最初の水平線の長さ, 1pxの太さ */
     no-repeat,
 
-    /* 2. 垂直線 (::after要素の上端から下端まで伸びる) */
+    /* 2. 垂直線 */
     linear-gradient(to bottom, var(--line-color) 0%, var(--line-color) 100%)
     var(--line-segment-length) /* X: 最初の水平線の終点から開始 */
-    0px /* Y: ::after要素の上端 (垂直線の開始位置) */
+    0px /* Y: ::afterの上端 (垂直線の開始位置) */
     / 1px var(--z-line-vertical-segment-height) /* サイズ: 1px幅, 垂直線の長さ (::afterの全高) */
     no-repeat,
 
-    /* 3. 2番目の水平線 (垂直線の中心に接続) */
+    /* 3. 2番目の水平線 (垂直線の下端に接続) */
     linear-gradient(to right, var(--line-color) 0%, var(--line-color) 100%)
     var(--line-segment-length) /* X: 垂直線の開始X座標 */
-    calc(var(--z-line-vertical-segment-height) / 2 - 0.5px) /* Y: ::after要素の高さの半分から0.5px上 (線の太さの中心) */
+    calc(var(--z-line-vertical-segment-height) - 0.5px) /* Y: 垂直線の最下端から0.5px上 (線の太さの中心) */
     / var(--line-segment-length) 1px /* サイズ: 2番目の水平線の長さ, 1pxの太さ */
     no-repeat;
 }
@@ -1087,3 +1087,4 @@ export default {
   font-size: 0.7em;
 }
 </style>
+

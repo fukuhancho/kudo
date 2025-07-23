@@ -68,98 +68,101 @@
                     class="bracket-match"
                     :class="{
                       'has-line-to-next': roundIndex < tournamentRounds.length - 1 && matchIndex % 2 === 0 && round[matchIndex + 1],
-                      'bye-match-transparent': match.isByeMatch // BYE試合の場合の透明スタイル
+                      'bye-match-hidden-content': match.isByeMatch // BYE試合の場合、コンテンツを非表示にするクラス
                     }"
                     :style="{
                       'margin-bottom': calculateMatchMarginBottom(roundIndex, matchIndex, round.length),
                       '--z-line-vertical-segment-height': getZLineVerticalSegmentHeight(roundIndex) + 'px',
                       '--match-padding-top': MATCH_PADDING_TOP + 'px', /* CSS変数として渡す */
                       '--match-padding-bottom': MATCH_PADDING_BOTTOM + 'px', /* CSS変数として渡す */
-                      '--match-box-height': CSS_MATCH_BOX_HEIGHT + 'px' /* CSS変数として渡す */
+                      '--match-box-height': MATCH_BOX_HEIGHT + 'px' /* CSS変数として渡す */
                     }"
                   >
-                    <!-- 試合スケジュール入力欄 (BYE試合では非表示) -->
-                    <div v-if="!match.isByeMatch" class="match-schedule-inputs-top-right">
-                      <!-- コート選択 (標準HTML select) -->
-                      <select
-                        v-model="match.court_id"
-                        @change="updateMatchSchedule(roundIndex, matchIndex, 'court', $event.target.value)"
-                        class="custom-input court-select"
+                    <!-- BYE試合でなければコンテンツを表示 -->
+                    <div v-if="!match.isByeMatch">
+                      <!-- 試合スケジュール入力欄 -->
+                      <div v-if="match" class="match-schedule-inputs-top-right">
+                        <!-- コート選択 (標準HTML select) -->
+                        <select
+                          v-model="match.court_id"
+                          @change="updateMatchSchedule(roundIndex, matchIndex, 'court', $event.target.value)"
+                          class="custom-input court-select"
+                        >
+                          <option value="" disabled selected>コート</option>
+                          <option v-for="courtOption in availableCourtOptions" :key="courtOption" :value="courtOption">
+                            {{ courtOption }}
+                          </option>
+                        </select>
+                        <!-- 試合順入力 (標準HTML input type="number") -->
+                        <input
+                          type="number"
+                          v-model.number="match.match_order_no"
+                          @input="updateMatchSchedule(roundIndex, matchIndex, 'order', $event.target.value)"
+                          min="1"
+                          placeholder="No."
+                          class="custom-input match-order-input"
+                        />
+                      </div>
+
+                      <div
+                        class="player-slot"
+                        :draggable="roundIndex === 0 && !match.player1?.isWinnerPlaceholder && !match.isByeMatch"
+                        @dragstart="dragStart($event, roundIndex, matchIndex, 'player1', match.player1)"
+                        @dragover.prevent="dragOver($event, roundIndex, matchIndex, 'player1')"
+                        @dragleave="dragLeave"
+                        @drop="drop($event, roundIndex, matchIndex, 'player1')"
+                        :class="{
+                          'player-blue': match.player1 && !match.player1.isBye && !match.player1.isWinnerPlaceholder,
+                          'player-placeholder': match.player1 && match.player1.isWinnerPlaceholder,
+                          'drag-over-target': isDragOverTarget(roundIndex, matchIndex, 'player1')
+                        }"
                       >
-                        <option value="" disabled selected>コート</option>
-                        <option v-for="courtOption in availableCourtOptions" :key="courtOption" :value="courtOption">
-                          {{ courtOption }}
-                        </option>
-                      </select>
-                      <!-- 試合順入力 (標準HTML input type="number") -->
-                      <input
-                        type="number"
-                        v-model.number="match.match_order_no"
-                        @input="updateMatchSchedule(roundIndex, matchIndex, 'order', $event.target.value)"
-                        min="1"
-                        placeholder="No."
-                        class="custom-input match-order-input"
-                      />
-                    </div>
-
-                    <div
-                      class="player-slot"
-                      :draggable="roundIndex === 0 && !match.player1?.isWinnerPlaceholder"
-                      @dragstart="dragStart($event, roundIndex, matchIndex, 'player1', match.player1)"
-                      @dragover.prevent="dragOver($event, roundIndex, matchIndex, 'player1')"
-                      @dragleave="dragLeave"
-                      @drop="drop($event, roundIndex, matchIndex, 'player1')"
-                      :class="{
-                        'player-blue': match.player1 && !match.player1.isBye && !match.player1.isWinnerPlaceholder,
-                        'player-placeholder': match.player1 && match.player1.isWinnerPlaceholder,
-                        'drag-over-target': isDragOverTarget(roundIndex, matchIndex, 'player1')
-                      }"
-                    >
-                      <template v-if="match.player1">
-                        <template v-if="match.player1.isWinnerPlaceholder">
-                          {{ `勝者: ${match.player1.winnerOf}` }}
-                        </template>
-                        <template v-else-if="match.player1.isBye">
-                          BYE
+                        <template v-if="match.player1">
+                          <template v-if="match.player1.isWinnerPlaceholder">
+                            {{ `勝者: ${match.player1.winnerOf}` }}
+                          </template>
+                          <template v-else-if="match.player1.isBye">
+                            BYE
+                          </template>
+                          <template v-else>
+                            {{ getPlayerFullNameWithBranchAndXclass(match.player1) }}
+                          </template>
                         </template>
                         <template v-else>
-                          {{ getPlayerFullNameWithBranchAndXclass(match.player1) }}
+                          未定
                         </template>
-                      </template>
-                      <template v-else>
-                        未定
-                      </template>
-                    </div>
+                      </div>
 
-                    <div class="vs-text">VS</div>
+                      <div class="vs-text">VS</div>
 
-                    <div
-                      class="player-slot"
-                      :draggable="roundIndex === 0 && !match.player2?.isWinnerPlaceholder"
-                      @dragstart="dragStart($event, roundIndex, matchIndex, 'player2', match.player2)"
-                      @dragover.prevent="dragOver($event, roundIndex, matchIndex, 'player2')"
-                      @dragleave="dragLeave"
-                      @drop="drop($event, roundIndex, matchIndex, 'player2')"
-                      :class="{
-                        'player-white': match.player2 && !match.player2.isWinnerPlaceholder,
-                        'player-placeholder': match.player2 && match.player2.isWinnerPlaceholder,
-                        'drag-over-target': isDragOverTarget(roundIndex, matchIndex, 'player2')
-                      }"
-                    >
-                      <template v-if="match.player2">
-                        <template v-if="match.player2.isWinnerPlaceholder">
-                          {{ `勝者: ${match.player2.winnerOf}` }}
-                        </template>
-                        <template v-else-if="match.player2.isBye">
-                          BYE
+                      <div
+                        class="player-slot"
+                        :draggable="roundIndex === 0 && !match.player2?.isWinnerPlaceholder && !match.isByeMatch"
+                        @dragstart="dragStart($event, roundIndex, matchIndex, 'player2', match.player2)"
+                        @dragover.prevent="dragOver($event, roundIndex, matchIndex, 'player2')"
+                        @dragleave="dragLeave"
+                        @drop="drop($event, roundIndex, matchIndex, 'player2')"
+                        :class="{
+                          'player-white': match.player2 && !match.player2.isWinnerPlaceholder,
+                          'player-placeholder': match.player2 && match.player2.isWinnerPlaceholder,
+                          'drag-over-target': isDragOverTarget(roundIndex, matchIndex, 'player2')
+                        }"
+                      >
+                        <template v-if="match.player2">
+                          <template v-if="match.player2.isWinnerPlaceholder">
+                            {{ `勝者: ${match.player2.winnerOf}` }}
+                          </template>
+                          <template v-else-if="match.player2.isBye">
+                            BYE
+                          </template>
+                          <template v-else>
+                            {{ getPlayerFullNameWithBranchAndXclass(match.player2) }}
+                          </template>
                         </template>
                         <template v-else>
-                          {{ getPlayerFullNameWithBranchAndXclass(match.player2) }}
+                          未定
                         </template>
-                      </template>
-                      <template v-else>
-                        未定
-                      </template>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -239,22 +242,17 @@ export default {
 
     let globalMatchIdCounter = 0;
 
-    // 定数定義 (F12で確認されたbox-sizing: border-box;適用後の実際の合計視覚高さ)
-    const CSS_MATCH_BOX_HEIGHT = 153; 
-    const ACTUAL_MATCH_BOX_HEIGHT = 153; 
-
-    const ACTUAL_WINNER_BOX_HEIGHT = 42; 
-
-    // これらの定数はCSS変数としてテンプレートに渡されます
+    // 定数定義
+    const PLAYER_SLOT_HEIGHT = 40;
+    const VS_TEXT_HEIGHT = 18;
     const MATCH_PADDING_TOP = 35;
     const MATCH_PADDING_BOTTOM = 8;
-    
-    const BASE_MATCH_VERTICAL_SPACING = 30; // 試合ボックス間の垂直方向の基本スペース
-    const TOTAL_MATCH_UNIT_HEIGHT = ACTUAL_MATCH_BOX_HEIGHT + BASE_MATCH_VERTICAL_SPACING; // 1つの試合ボックス + その下のマージンを含めた合計高さ
+    const MATCH_BORDER_WIDTH = 1;
+    // 試合ボックスの実際の高さ (コンテンツ + 上下パディング + ボーダー)
+    const MATCH_BOX_HEIGHT = (PLAYER_SLOT_HEIGHT * 2) + VS_TEXT_HEIGHT + MATCH_PADDING_TOP + MATCH_PADDING_BOTTOM + (MATCH_BORDER_WIDTH * 2); // +5を削除
 
-    // 優勝ボックスの垂直方向の微調整オフセット (必要に応じてこの値を調整してください)
-    // 例えば、+1pxで下に、-1pxで上に移動します。
-    const WINNER_BOX_VERTICAL_OFFSET = 0; // 一旦リセットして再評価
+    const BASE_MATCH_VERTICAL_SPACING = 30;
+    const TOTAL_MATCH_UNIT_HEIGHT = MATCH_BOX_HEIGHT + BASE_MATCH_VERTICAL_SPACING;
 
     const getPlayerFullNameWithBranchAndXclass = (player) => {
       if (!player) return '未定';
@@ -314,7 +312,7 @@ export default {
             matchId: matchId,
             court_id: null,
             match_order_no: null,
-            isByeMatch: true // BYE試合として明示的に設定
+            isByeMatch: true
           });
           nextRoundAdvancingPlayers.push(player);
         });
@@ -328,7 +326,7 @@ export default {
             matchId: matchId,
             court_id: null,
             match_order_no: null,
-            isByeMatch: false // 通常試合として明示的に設定
+            isByeMatch: false
           });
           nextRoundAdvancingPlayers.push({ isWinnerPlaceholder: true, winnerOf: matchId });
         }
@@ -420,7 +418,7 @@ export default {
             matchId: matchId,
             court_id: null,
             match_order_no: null,
-            isByeMatch: false // 通常試合として明示的に設定
+            isByeMatch: false
           });
           nextRoundAdvancingPlayers.push({ isWinnerPlaceholder: true, winnerOf: matchId });
         }
@@ -496,20 +494,12 @@ export default {
           
           loadedRounds.forEach(round => {
             round.forEach(match => {
-              // デフォルト値を設定
               if (!('court_id' in match)) match.court_id = null;
               if (!('match_order_no' in match)) match.match_order_no = null;
-
-              // player1またはplayer2がBYEの場合、isBye: trueを明示的に設定
-              if (match.player1 && match.player1.name === 'BYE') {
-                match.player1.isBye = true;
+              if (!('isByeMatch' in match)) match.isByeMatch = false;
+              if (match.player2 && match.player2.label === 'BYE' && !match.player2.isBye) {
+                  match.player2.isBye = true;
               }
-              if (match.player2 && match.player2.name === 'BYE') {
-                match.player2.isBye = true;
-              }
-
-              // isByeMatchをplayer1またはplayer2のisByeプロパティに基づいて設定
-              match.isByeMatch = (match.player1?.isBye === true || match.player2?.isBye === true);
             });
           });
           tournamentRounds.value = loadedRounds;
@@ -556,20 +546,12 @@ export default {
 
           parsedBracketData.forEach(round => {
             round.forEach(match => {
-              // デフォルト値を設定
               if (!('court_id' in match)) match.court_id = null;
               if (!('match_order_no' in match)) match.match_order_no = null;
-
-              // player1またはplayer2がBYEの場合、isBye: trueを明示的に設定
-              if (match.player1 && match.player1.name === 'BYE') {
-                match.player1.isBye = true;
+              if (!('isByeMatch' in match)) match.isByeMatch = false;
+              if (match.player2 && match.player2.label === 'BYE' && !match.player2.isBye) {
+                  match.player2.isBye = true;
               }
-              if (match.player2 && match.player2.name === 'BYE') {
-                match.player2.isBye = true;
-              }
-
-              // isByeMatchをplayer1またはplayer2のisByeプロパティに基づいて設定
-              match.isByeMatch = (match.player1?.isBye === true || match.player2?.isBye === true);
             });
           });
 
@@ -606,36 +588,16 @@ export default {
       }
     }, { immediate: true });
 
-    // 各ラウンドの bracket-round 要素に適用する margin-top を計算する関数
-    // お客様が「うまくいっていた」とご提示くださったロジックに復元
     const getRoundMatchesMarginTop = (roundIndex) => {
       if (roundIndex === 0) return '0px';
 
-      let currentRoundFirstMatchCenterY = ACTUAL_MATCH_BOX_HEIGHT / 2;
+      let currentRoundFirstMatchCenterY = MATCH_BOX_HEIGHT / 2;
 
       for (let i = 0; i < roundIndex; i++) {
         currentRoundFirstMatchCenterY += (TOTAL_MATCH_UNIT_HEIGHT * Math.pow(2, i)) / 2;
       }
 
-      return `${currentRoundFirstMatchCenterY - ACTUAL_MATCH_BOX_HEIGHT / 2}px`;
-    };
-
-    // 優勝ボックスの bracket-round に適用する margin-top を計算する関数
-    const getFinalWinnerMatchesMarginTop = () => {
-      if (tournamentRounds.value.length === 0) return '0px';
-      
-      const lastRoundIndex = tournamentRounds.value.length - 1; 
-      
-      // 最終ラウンドのbracket-roundに適用されているmargin-topを基準とする
-      const baseMarginTopForLastRound = parseFloat(getRoundMatchesMarginTop(lastRoundIndex));
-
-      // 最終ラウンドの試合ボックスと優勝ボックスの高さの差を考慮し、中心を揃える
-      // (ACTUAL_MATCH_BOX_HEIGHT - ACTUAL_WINNER_BOX_HEIGHT) / 2 は、高さの差の半分
-      // これをbaseMarginTopForLastRoundに加えることで、中心が揃うように調整
-      const requiredMarginTopForWinner = baseMarginTopForLastRound + (ACTUAL_MATCH_BOX_HEIGHT - ACTUAL_WINNER_BOX_HEIGHT) / 2;
-
-      // 微調整用のオフセットを適用
-      return `${requiredMarginTopForWinner + WINNER_BOX_VERTICAL_OFFSET}px`;
+      return `${currentRoundFirstMatchCenterY - MATCH_BOX_HEIGHT / 2}px`;
     };
 
     const calculateMatchMarginBottom = (roundIndex, matchIndex, totalMatchesInRound) => {
@@ -647,20 +609,45 @@ export default {
       }
 
       const verticalSpanOfBlock = TOTAL_MATCH_UNIT_HEIGHT * Math.pow(2, roundIndex);
-      const requiredMargin = verticalSpanOfBlock - ACTUAL_MATCH_BOX_HEIGHT;
+      const requiredMargin = verticalSpanOfBlock - MATCH_BOX_HEIGHT;
 
       return `${requiredMargin}px`;
     };
 
     const getZLineVerticalSegmentHeight = (roundIndex) => {
-      // 垂直線の長さは、接続する2つの試合ボックスの中心間の垂直距離の倍数となる
-      // この値は、CSSの::after要素の高さとして使用され、その中で線が描画される
       return TOTAL_MATCH_UNIT_HEIGHT * Math.pow(2, roundIndex);
     };
 
+    const getFinalWinnerMatchesMarginTop = () => {
+      if (tournamentRounds.value.length === 0) return '0px';
+      const lastRoundIndex = tournamentRounds.value.length - 1;
+      
+      // 最終ラウンドの最初の試合ボックスのトップからのオフセット
+      const lastRoundTopOffset = getRoundMatchesMarginTop(lastRoundIndex);
+      
+      // 最終ラウンドの試合数
+      const numMatchesInLastRound = tournamentRounds.value[lastRoundIndex].length;
+      
+      // 最終ラウンドの垂直方向の全高 (最後の試合ボックスの底までの距離)
+      // 各試合ボックスの高さ + 各試合間のマージン
+      let lastRoundTotalHeight = 0;
+      if (numMatchesInLastRound > 0) {
+        lastRoundTotalHeight = numMatchesInLastRound * MATCH_BOX_HEIGHT;
+        if (numMatchesInLastRound > 1) {
+          // 最後の試合ボックスのマージンは0なので、最後の試合数を考慮してマージンを計算
+          lastRoundTotalHeight += (numMatchesInLastRound - 1) * parseFloat(calculateMatchMarginBottom(lastRoundIndex, 0, numMatchesInLastRound));
+        }
+      }
+
+      // 最終ラウンド全体の中心Y座標
+      const lastRoundCenterY = parseFloat(lastRoundTopOffset) + (lastRoundTotalHeight / 2);
+
+      // 優勝ボックスを最終ラウンドの中心に合わせる
+      return `${lastRoundCenterY - (MATCH_BOX_HEIGHT / 2)}px`;
+    };
+
     const dragStart = (event, rIdx, mIdx, sType, player) => {
-      // ラウンド1以外、または勝者プレースホルダーの選手はドラッグ不可
-      if (rIdx !== 0 || player?.isWinnerPlaceholder) {
+      if (rIdx !== 0 || player?.isWinnerPlaceholder || tournamentRounds.value[rIdx][mIdx].isByeMatch) {
         event.preventDefault();
         return;
       }
@@ -670,8 +657,7 @@ export default {
     };
 
     const dragOver = (event, rIdx, mIdx, sType) => {
-      // ラウンド1以外、または勝者プレースホルダーの選手スロットにはドロップ不可
-      if (rIdx !== 0 || tournamentRounds.value[rIdx][mIdx][sType]?.isWinnerPlaceholder) {
+      if (rIdx !== 0 || tournamentRounds.value[rIdx][mIdx][sType]?.isWinnerPlaceholder || tournamentRounds.value[rIdx][mIdx].isByeMatch) {
         return;
       }
       event.preventDefault();
@@ -683,8 +669,7 @@ export default {
     };
 
     const drop = (event, targetRIdx, targetMIdx, targetSType) => {
-      // ラウンド1以外、または勝者プレースホルダーの選手スロットにはドロップ不可
-      if (targetRIdx !== 0 || tournamentRounds.value[targetRIdx][targetMIdx][targetSType]?.isWinnerPlaceholder) {
+      if (targetRIdx !== 0 || tournamentRounds.value[targetRIdx][targetMIdx][targetSType]?.isWinnerPlaceholder || tournamentRounds.value[targetRIdx][targetMIdx].isByeMatch) {
         return;
       }
       event.preventDefault();
@@ -699,6 +684,13 @@ export default {
       const sourceSType = draggedItem.value.sType;
       const sourcePlayer = draggedItem.value.player;
 
+      // BYE選手は入れ替え不可
+      if (sourcePlayer?.isBye || tournamentRounds.value[targetRIdx][targetMIdx][targetSType]?.isBye) {
+        showSnackbar('BYEの選手は入れ替えできません。', 'warning');
+        draggedItem.value = null;
+        return;
+      }
+
       // 同一試合ボックス内での入れ替えの場合
       if (sourceRIdx === targetRIdx && sourceMIdx === targetMIdx) {
         if (sourceSType !== targetSType) { // 異なるスロットへのドロップの場合のみ処理
@@ -708,9 +700,6 @@ export default {
           currentMatch[sourceSType] = targetPlayer;
           currentMatch[targetSType] = sourcePlayer;
 
-          // BYE状態の更新
-          currentMatch.isByeMatch = (currentMatch.player1?.isBye === true || currentMatch.player2?.isBye === true);
-
           tournamentRounds.value[sourceRIdx].splice(sourceMIdx, 1, currentMatch);
           showSnackbar('同一試合内で選手を入れ替えました！トーナメント表を更新しました！', 'success');
         } else {
@@ -718,20 +707,16 @@ export default {
         }
       } else {
         // 異なる試合ボックス間での入れ替えの場合
-        const sourceMatch = JSON.parse(JSON.stringify(tournamentRounds.value[sourceRIdx][sourceMIdx])); // Deep clone
-        const targetMatch = JSON.parse(JSON.stringify(tournamentRounds.value[targetRIdx][targetMIdx])); // Deep clone
+        const targetPlayer = tournamentRounds.value[targetRIdx][targetMIdx][targetSType];
 
-        const targetPlayerOriginal = targetMatch[targetSType];
+        const newSourceMatch = JSON.parse(JSON.stringify(tournamentRounds.value[sourceRIdx][sourceMIdx])); // Deep clone
+        const newTargetMatch = JSON.parse(JSON.stringify(tournamentRounds.value[targetRIdx][targetMIdx])); // Deep clone
 
-        sourceMatch[sourceSType] = targetPlayerOriginal;
-        targetMatch[targetSType] = sourcePlayer;
+        newSourceMatch[sourceSType] = targetPlayer;
+        newTargetMatch[targetSType] = sourcePlayer;
 
-        // BYE状態の更新
-        sourceMatch.isByeMatch = (sourceMatch.player1?.isBye === true || sourceMatch.player2?.isBye === true);
-        targetMatch.isByeMatch = (targetMatch.player1?.isBye === true || targetMatch.player2?.isBye === true);
-
-        tournamentRounds.value[sourceRIdx].splice(sourceMIdx, 1, sourceMatch);
-        tournamentRounds.value[targetRIdx].splice(targetMIdx, 1, targetMatch);
+        tournamentRounds.value[sourceRIdx].splice(sourceMIdx, 1, newSourceMatch);
+        tournamentRounds.value[targetRIdx].splice(targetMIdx, 1, newTargetMatch);
         showSnackbar('異なる試合間で選手を入れ替えました！トーナメント表を更新しました！', 'success');
       }
       
@@ -789,7 +774,7 @@ export default {
       // CSS変数として使用するために公開
       MATCH_PADDING_TOP,
       MATCH_PADDING_BOTTOM,
-      CSS_MATCH_BOX_HEIGHT // テンプレートに渡すのはCSSの高さ
+      MATCH_BOX_HEIGHT
     };
   },
 };
@@ -801,7 +786,7 @@ export default {
   /* ここにCSS変数を定義 */
   --player-slot-height: 40px; /* 選手名スロットのおおよその高さ */
   --vs-text-height: 18px; /* VSテキストのおおよその高さ */
-  /* --match-border-width: 1px;  JSから削除されたため、ここも削除 */
+  --match-border-width: 1px; /* 試合ボックスのボーダー幅 */
 
   /* ラウンド間の水平方向のギャップ */
   --round-horizontal-gap: 75px;
@@ -871,7 +856,7 @@ export default {
   padding-bottom: var(--match-padding-bottom); /* JSから渡される値を使用 */
   padding-left: 12px;
   padding-right: 12px;
-  border: 1px solid #cfd8dc; /* MATCH_BORDER_WIDTHを直接1pxに設定 */
+  border: var(--match-border-width) solid #cfd8dc;
   border-radius: 4px;
   background-color: #EEEEEE; /* 試合枠の背景色を薄いグレーに変更 */
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
@@ -883,16 +868,18 @@ export default {
   /* margin-bottom は Vue の v-bind:style で動的に設定されるため、ここからは削除 */
 }
 
-/* BYE試合の場合の透明スタイル */
-.bracket-match.bye-match-transparent {
+/* BYE試合の場合、コンテンツを非表示にするスタイル */
+.bracket-match.bye-match-hidden-content {
   background-color: transparent !important;
   border-color: transparent !important;
   box-shadow: none !important;
-  /* pointer-eventsは削除し、ドラッグ可能にする */
+  pointer-events: none; /* クリックやドラッグイベントを無効化 */
 }
-
-/* BYE試合の接続線も完全に非表示にする (これは以前から維持) */
-.bracket-match.bye-match-transparent::after {
+.bracket-match.bye-match-hidden-content > div {
+    visibility: hidden; /* 子要素のコンテンツを非表示にする */
+}
+/* BYE試合の接続線も完全に非表示にする */
+.bracket-match.bye-match-hidden-content::after {
   content: none; /* 接続線を完全に非表示にする */
   background: none !important; /* 念のため背景もnoneに */
 }
@@ -907,7 +894,7 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 0.9em;
-  height: 40px; /* F12で確認された高さに合わせて直接指定 */
+  height: var(--player-slot-height); /* 選手スロットの固定高さ */
   display: flex; /* テキストの垂直方向中央揃え用 */
   align-items: center;
   justify-content: center;
@@ -969,7 +956,7 @@ export default {
   content: '';
   position: absolute;
   left: 100%; /* 親要素の右端に::afterの左端を合わせる */
-  top: 50%;
+  top: 50%; /* ::after要素の上端を、親要素の垂直方向中央に揃える */
   transform: translateY(-0.5px); /* 1pxの線の厚さを考慮して正確に中央に配置 */
   width: var(--line-segment-length);
   height: 1px;
@@ -983,7 +970,7 @@ export default {
   content: '';
   position: absolute;
   left: 100%; /* 親要素の右端に::afterの左端を合わせる */
-  top: 50%; /* ::after要素の上端が親の試合ボックスの垂直中央に位置 */
+  top: 50%; /* ::after要素の上端を、親要素の垂直方向中央に揃える */
   transform: translateY(-0.5px); /* 1pxの線の厚さを考慮して正確に中央に配置 */
   /* ::after要素の幅は、2つの水平線セグメントを合わせたもの */
   width: calc(var(--line-segment-length) * 2);
@@ -993,20 +980,20 @@ export default {
   pointer-events: none;
 
   background:
-    /* 1. 最初の水平線 (親の試合ボックスの中心から伸びる) */
+    /* 1. 最初の水平線 (試合ボックスの中心から伸びる) */
     linear-gradient(to right, var(--line-color) 0%, var(--line-color) 100%)
-    0 0px /* Y: ::after要素の上端 (これが親の試合ボックスの垂直中央) */
+    0 0px /* X: ::afterの左端, Y: ::afterの上端 (これが試合ボックスの垂直中央) */
     / var(--line-segment-length) 1px /* サイズ: 最初の水平線の長さ, 1pxの太さ */
     no-repeat,
 
-    /* 2. 垂直線 (::after要素の上端から下端まで伸びる) */
+    /* 2. 垂直線 (::after要素のY座標0pxから開始) */
     linear-gradient(to bottom, var(--line-color) 0%, var(--line-color) 100%)
     var(--line-segment-length) /* X: 最初の水平線の終点から開始 */
-    0px /* Y: ::after要素の上端 (垂直線の開始位置) */
+    0px /* Y: ::afterの上端 */
     / 1px var(--z-line-vertical-segment-height) /* サイズ: 1px幅, 垂直線の長さ (::afterの全高) */
     no-repeat,
 
-    /* 3. 2番目の水平線 (垂直線の中心に接続) */
+    /* 3. 2番目の水平線 (垂直線の半分の位置から) */
     linear-gradient(to right, var(--line-color) 0%, var(--line-color) 100%)
     var(--line-segment-length) /* X: 垂直線の開始X座標 */
     calc(var(--z-line-vertical-segment-height) / 2 - 0.5px) /* Y: ::after要素の高さの半分から0.5px上 (線の太さの中心) */
@@ -1087,3 +1074,4 @@ export default {
   font-size: 0.7em;
 }
 </style>
+
