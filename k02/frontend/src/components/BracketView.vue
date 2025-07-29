@@ -110,8 +110,7 @@
                       @dragleave="dragLeave"
                       @drop="drop($event, roundIndex, matchIndex, 'player1')"
                       :class="{
-                        'player-blue': match.player1 && !match.player1.isBye && !match.player1.isWinnerPlaceholder,
-                        'player-placeholder': match.player1 && match.player1.isWinnerPlaceholder,
+                        'player-blue': match.player1 && !match.player1.isBye, // 勝者プレースホルダーも青色にする
                         'drag-over-target': isDragOverTarget(roundIndex, matchIndex, 'player1')
                       }"
                     >
@@ -141,8 +140,7 @@
                       @dragleave="dragLeave"
                       @drop="drop($event, roundIndex, matchIndex, 'player2')"
                       :class="{
-                        'player-white': match.player2 && !match.player2.isWinnerPlaceholder,
-                        'player-placeholder': match.player2 && match.player2.isWinnerPlaceholder,
+                        'player-white': match.player2 && !match.player2.isBye, // 勝者プレースホルダーも白色にする
                         'drag-over-target': isDragOverTarget(roundIndex, matchIndex, 'player2')
                       }"
                     >
@@ -254,7 +252,7 @@ export default {
 
     // 優勝ボックスの垂直方向の微調整オフセット (必要に応じてこの値を調整してください)
     // 例えば、+1pxで下に、-1pxで上に移動します。
-    const WINNER_BOX_VERTICAL_OFFSET = 0; // 一旦リセットして再評価
+    const WINNER_BOX_VERTICAL_OFFSET = 0; 
 
     const getPlayerFullNameWithBranchAndXclass = (player) => {
       if (!player) return '未定';
@@ -365,6 +363,17 @@ export default {
         return;
       }
 
+      // 既存のスケジュールデータを保持するためのマップを作成
+      const existingScheduleMap = new Map();
+      tournamentRounds.value.forEach(round => {
+        round.forEach(match => {
+          existingScheduleMap.set(match.matchId, {
+            court_id: match.court_id,
+            match_order_no: match.match_order_no
+          });
+        });
+      });
+
       const currentRound1Snapshot = JSON.parse(JSON.stringify(tournamentRounds.value[0]));
 
       let currentRoundParticipantsForNextRound = [];
@@ -381,6 +390,7 @@ export default {
         }
       });
 
+      // ラウンド2以降をクリア
       tournamentRounds.value.splice(1);
       finalWinner.value = null;
 
@@ -414,12 +424,16 @@ export default {
         for (let i = 0; i < playersPlaying.length; i += 2) {
           globalMatchIdCounter++;
           const matchId = `R${roundNumber}-M${globalMatchIdCounter}`;
+          
+          // 既存のスケジュールデータを参照し、存在すれば適用
+          const existingSchedule = existingScheduleMap.get(matchId);
+
           nextRoundMatches.push({
             player1: playersPlaying[i],
             player2: playersPlaying[i + 1],
             matchId: matchId,
-            court_id: null,
-            match_order_no: null,
+            court_id: existingSchedule ? existingSchedule.court_id : null,
+            match_order_no: existingSchedule ? existingSchedule.match_order_no : null,
             isByeMatch: false // 通常試合として明示的に設定
           });
           nextRoundAdvancingPlayers.push({ isWinnerPlaceholder: true, winnerOf: matchId });
@@ -494,6 +508,9 @@ export default {
         if (response.data.success) {
           let loadedRounds = JSON.parse(response.data.bracket_data);
           
+          // Debugging: Log the parsed data immediately after parsing
+          console.log('Parsed loadedRounds BEFORE any further processing:', loadedRounds);
+
           loadedRounds.forEach(round => {
             round.forEach(match => {
               // デフォルト値を設定
@@ -517,8 +534,6 @@ export default {
           finalWinner.value = response.data.final_winner_data ? JSON.parse(response.data.final_winner_data) : null;
           round1ByePlayers.value = response.data.round1_bye_players_data ? JSON.parse(response.data.round1_bye_players_data) : [];
 
-          recalculateSubsequentRounds();
-
           showSnackbar('トーナメント組み合わせを読み込みました！', 'success');
         } else {
           if (response.status === 404) {
@@ -535,7 +550,7 @@ export default {
           tournamentRounds.value = [];
           finalWinner.value = null;
           round1ByePlayers.value = [];
-          showSnackbar(error.response.data.message || '指定された組み合わせは見つかりませんでした。', 'info');
+          showSnackbar(error.response.data.message || '指定された組み合わせは見つかりませんでした。', 'error'); 
         } else {
           showSnackbar('読み込み中にエラーが発生しました。サーバーとの接続を確認してください。', 'error');
         }
@@ -595,8 +610,6 @@ export default {
           finalWinner.value = parsedFinalWinnerData;
           round1ByePlayers.value = parsedRound1ByePlayersData;
 
-          recalculateSubsequentRounds();
-
         } catch (e) {
           showSnackbar('既存のトーナメントデータの解析に失敗しました。', 'error');
           clearBracket();
@@ -607,7 +620,6 @@ export default {
     }, { immediate: true });
 
     // 各ラウンドの bracket-round 要素に適用する margin-top を計算する関数
-    // お客様が「うまくいっていた」とご提示くださったロジックに復元
     const getRoundMatchesMarginTop = (roundIndex) => {
       if (roundIndex === 0) return '0px';
 
@@ -654,7 +666,7 @@ export default {
 
     const getZLineVerticalSegmentHeight = (roundIndex) => {
       // 垂直線の長さは、接続する2つの試合ボックスの中心間の垂直距離の倍数となる
-      // この値は、CSSの::after要素の高さとして使用され、その中で線が描画される
+      // CSSの::after要素の高さとして使用され、その中で線が描画される
       return TOTAL_MATCH_UNIT_HEIGHT * Math.pow(2, roundIndex);
     };
 
@@ -940,12 +952,12 @@ export default {
   border: 1px solid #bdbdbd; /* ライトグレーのボーダー */
 }
 
-/* 勝者プレースホルダーのスタイル */
-.player-placeholder {
-  background-color: #f0f0f0; /* 薄いグレー */
-  color: #616161; /* 暗めのグレー */
-  border: 1px solid #bdbdbd; /* player-whiteと同じボーダー */
-}
+/* 勝者プレースホルダーのスタイル (このクラスはもう使用されません) */
+/* .player-placeholder {
+  background-color: #f0f0f0; 
+  color: #616161; 
+  border: 1px solid #bdbdbd; 
+} */
 
 .player-gold { /* 優勝者用の新しいスタイル */
   background-color: #FFD700; /* Gold */
@@ -1003,8 +1015,7 @@ export default {
     linear-gradient(to bottom, var(--line-color) 0%, var(--line-color) 100%)
     var(--line-segment-length) /* X: 最初の水平線の終点から開始 */
     0px /* Y: ::after要素の上端 (垂直線の開始位置) */
-    / 1px var(--z-line-vertical-segment-height) /* サイズ: 1px幅, 垂直線の長さ (::afterの全高) */
-    no-repeat,
+    / 1px var(--z-line-vertical-segment-height) no-repeat,
 
     /* 3. 2番目の水平線 (垂直線の中心に接続) */
     linear-gradient(to right, var(--line-color) 0%, var(--line-color) 100%)
