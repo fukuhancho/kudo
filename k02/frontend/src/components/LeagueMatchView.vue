@@ -223,9 +223,17 @@ export default {
       return courts;
     });
 
+    // プレイヤーのソート用IDを取得するヘルパー関数
+    // player_idが存在しない場合は、プレイヤー名など、一意に識別できるものを使う
+    const getPlayerIdForSort = (player) => {
+      return String(player?.player_id || (player?.familyname + '_' + player?.firstname));
+    };
+
     // 試合のplayer_idをソートして一意のキーを生成するヘルパー関数
+    // 常に同じペアからは同じキーが生成されるようにする
     const createMatchKey = (player1Id, player2Id) => {
-      return [player1Id, player2Id].sort().join('-');
+      const sortedIds = [String(player1Id), String(player2Id)].sort();
+      return sortedIds.join('-');
     };
 
     // generatedMatches を match_key をキーとする Map に変換する算出プロパティ
@@ -245,28 +253,42 @@ export default {
     };
     
     // 表示用の試合リストを生成する算出プロパティ
-    // 空道ルール「上の選手が青、下の選手が白」に則り、player1_dataを青、player2_dataを白として表示
+    // 試合順は、テーブルの選手の現在の並び順に基づいて固定される
     const displayedMatches = computed(() => {
-      // generatedMatchesをmatch_order_noでソート
-      const sortedMatches = [...generatedMatches.value].sort((a, b) => {
-        // null値の扱い: nullは一番後ろに
-        if (a.match_order_no === null && b.match_order_no === null) return 0;
-        if (a.match_order_no === null) return 1;
-        if (b.match_order_no === null) return -1;
-        return a.match_order_no - b.match_order_no;
-      });
+      if (!leagueParticipantsOrder.value || leagueParticipantsOrder.value.length < 2) {
+        return [];
+      }
 
-      return sortedMatches.map(match => {
-        // player1_dataとplayer2_dataが確実に存在するようにチェック
-        const player1 = props.registeredParticipants.find(p => p.player_id === match.player1_id);
-        const player2 = props.registeredParticipants.find(p => p.player_id === match.player2_id);
-        
-        return {
-          ...match,
-          player1_data: player1, // 常にplayer1_dataを青として扱う
-          player2_data: player2  // 常にplayer2_dataを白として扱う
-        };
-      });
+      const orderedMatches = [];
+      const participants = leagueParticipantsOrder.value; // テーブル表示の現在の選手順序
+
+      // テーブルの行インデックスに基づいて、期待される試合の組み合わせと順序を生成
+      for (let i = 0; i < participants.length; i++) {
+        for (let j = i + 1; j < participants.length; j++) {
+          const player1InOrder = participants[i]; // テーブル上で先に表示される選手 (青側)
+          const player2InOrder = participants[j]; // テーブル上で後に表示される選手 (白側)
+
+          // 試合キーは、player_idをソートして作成することで、matchesMapから確実に検索できるようにする
+          const matchKey = createMatchKey(player1InOrder.player_id, player2InOrder.player_id);
+          const existingMatch = matchesMap.value.get(matchKey);
+
+          orderedMatches.push({
+            player1_id: player1InOrder.player_id,
+            player2_id: player2InOrder.player_id,
+            player1_data: player1InOrder, // テーブル上の位置に基づいた「青」の選手
+            player2_data: player2InOrder, // テーブル上の位置に基づいた「白」の選手
+            match_id: existingMatch ? existingMatch.match_id : `M-${player1InOrder.player_id}-${player2InOrder.player_id}`,
+            match_key: matchKey,
+            status: existingMatch ? existingMatch.status : '未開始',
+            score: existingMatch ? existingMatch.score : '',
+            court_id: existingMatch ? existingMatch.court_id : null,
+            match_order_no: existingMatch ? existingMatch.match_order_no : null
+          });
+        }
+      }
+
+      // orderedMatchesは既にテーブル上の位置関係に基づいて生成されているため、追加のソートは不要
+      return orderedMatches;
     });
 
     // リーグ戦組み合わせを生成する関数
@@ -278,21 +300,34 @@ export default {
         return;
       }
 
-      // 選手をシャッフルして順序を決定
+      // 選手をシャッフルして順序を決定 (テーブル表示用)
       const shuffledParticipants = [...props.registeredParticipants].sort(() => 0.5 - Math.random());
       leagueParticipantsOrder.value = shuffledParticipants;
 
       const matches = [];
-      const participants = leagueParticipantsOrder.value;
+      const participants = props.registeredParticipants; // 元の登録選手リストから試合を生成
+
+      // 全ての組み合わせを生成
       for (let i = 0; i < participants.length; i++) {
         for (let j = i + 1; j < participants.length; j++) {
+          const p1 = participants[i];
+          const p2 = participants[j];
+
+          // generatedMatchesで生成される試合のplayer1_idとplayer2_idは
+          // 常にplayer_idの昇順になるようにする (キーの一貫性のため)
+          let player1_id_for_match = p1.player_id;
+          let player2_id_for_match = p2.player_id;
+
+          if (String(p1.player_id).localeCompare(String(p2.player_id)) > 0) {
+            player1_id_for_match = p2.player_id;
+            player2_id_for_match = p1.player_id;
+          }
+
           matches.push({
-            player1_id: participants[i].player_id,
-            player2_id: participants[j].player_id,
-            // player1_dataとplayer2_dataはここでは参照として保持
-            // 表示時にはdisplayedMatchesで改めて取得する
-            match_id: `M-${participants[i].player_id}-${participants[j].player_id}`,
-            match_key: createMatchKey(participants[i].player_id, participants[j].player_id),
+            player1_id: player1_id_for_match,
+            player2_id: player2_id_for_match,
+            match_id: `M-${player1_id_for_match}-${player2_id_for_match}`,
+            match_key: createMatchKey(player1_id_for_match, player2_id_for_match),
             status: '未開始',
             score: '',
             court_id: null,
@@ -304,7 +339,7 @@ export default {
 
       // 初期順位データの生成
       const initialStandings = {};
-      participants.forEach(p => {
+      props.registeredParticipants.forEach(p => {
         initialStandings[p.player_id] = {
           player_id: p.player_id,
           player_name: getPlayerFullNameWithBranchAndXclass(p),
@@ -382,6 +417,7 @@ export default {
           loadedMatches.forEach(match => {
             if (!('court_id' in match)) match.court_id = null;
             if (!('match_order_no' in match)) match.match_order_no = null;
+            // match_keyが存在しない場合のために生成
             match.match_key = createMatchKey(match.player1_id, match.player2_id);
           });
           generatedMatches.value = loadedMatches;
@@ -465,6 +501,7 @@ export default {
       leagueParticipantsOrder.value = newOrder;
       draggedIndex.value = null;
       showSnackbar('選手の順序を入れ替えました！', 'success');
+      // leagueParticipantsOrderが変更されたことでdisplayedMatchesが自動的に再計算される
     };
 
     const isDragOverTargetRow = (rowIndex) => {
@@ -504,7 +541,8 @@ export default {
       availableCourtOptions,
       updateMatchSchedule,
       getMatch,
-      displayedMatches, // 新しく追加した算出プロパティ
+      displayedMatches,
+      getPlayerIdForSort, // ESLintエラー解消のため、戻り値に追加
     };
   },
 };
