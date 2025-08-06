@@ -224,11 +224,13 @@ export default {
     });
 
     // プレイヤーのソート用IDを取得するヘルパー関数
+    // player_idが存在しない場合は、プレイヤー名など、一意に識別できるものを使う
     const getPlayerIdForSort = (player) => {
       return String(player?.player_id || (player?.familyname + '_' + player?.firstname));
     };
 
     // 試合のplayer_idをソートして一意のキーを生成するヘルパー関数
+    // 常に同じペアからは同じキーが生成されるようにする
     const createMatchKey = (player1Id, player2Id) => {
       const sortedIds = [String(player1Id), String(player2Id)].sort();
       return sortedIds.join('-');
@@ -251,27 +253,30 @@ export default {
     };
     
     // 表示用の試合リストを生成する算出プロパティ
+    // 試合順は、テーブルの選手の現在の並び順に基づいて固定される
     const displayedMatches = computed(() => {
       if (!leagueParticipantsOrder.value || leagueParticipantsOrder.value.length < 2) {
         return [];
       }
 
       const orderedMatches = [];
-      const participants = leagueParticipantsOrder.value;
+      const participants = leagueParticipantsOrder.value; // テーブル表示の現在の選手順序
 
+      // テーブルの行インデックスに基づいて、期待される試合の組み合わせと順序を生成
       for (let i = 0; i < participants.length; i++) {
         for (let j = i + 1; j < participants.length; j++) {
-          const player1InOrder = participants[i];
-          const player2InOrder = participants[j];
+          const player1InOrder = participants[i]; // テーブル上で先に表示される選手 (青側)
+          const player2InOrder = participants[j]; // テーブル上で後に表示される選手 (白側)
 
+          // 試合キーは、player_idをソートして作成することで、matchesMapから確実に検索できるようにする
           const matchKey = createMatchKey(player1InOrder.player_id, player2InOrder.player_id);
           const existingMatch = matchesMap.value.get(matchKey);
 
           orderedMatches.push({
             player1_id: player1InOrder.player_id,
             player2_id: player2InOrder.player_id,
-            player1_data: player1InOrder, // フルプレイヤーデータを含める
-            player2_data: player2InOrder, // フルプレイヤーデータを含める
+            player1_data: player1InOrder, // テーブル上の位置に基づいた「青」の選手
+            player2_data: player2InOrder, // テーブル上の位置に基づいた「白」の選手
             match_id: existingMatch ? existingMatch.match_id : `M-${player1InOrder.player_id}-${player2InOrder.player_id}`,
             match_key: matchKey,
             status: existingMatch ? existingMatch.status : '未開始',
@@ -281,6 +286,8 @@ export default {
           });
         }
       }
+
+      // orderedMatchesは既にテーブル上の位置関係に基づいて生成されているため、追加のソートは不要
       return orderedMatches;
     });
 
@@ -293,34 +300,32 @@ export default {
         return;
       }
 
+      // 選手をシャッフルして順序を決定 (テーブル表示用)
       const shuffledParticipants = [...props.registeredParticipants].sort(() => 0.5 - Math.random());
       leagueParticipantsOrder.value = shuffledParticipants;
 
       const matches = [];
-      const participants = props.registeredParticipants;
+      const participants = props.registeredParticipants; // 元の登録選手リストから試合を生成
 
+      // 全ての組み合わせを生成
       for (let i = 0; i < participants.length; i++) {
         for (let j = i + 1; j < participants.length; j++) {
           const p1 = participants[i];
           const p2 = participants[j];
 
+          // generatedMatchesで生成される試合のplayer1_idとplayer2_idは
+          // 常にplayer_idの昇順になるようにする (キーの一貫性のため)
           let player1_id_for_match = p1.player_id;
           let player2_id_for_match = p2.player_id;
-          let player1_data_for_match = p1;
-          let player2_data_for_match = p2;
 
           if (String(p1.player_id).localeCompare(String(p2.player_id)) > 0) {
             player1_id_for_match = p2.player_id;
             player2_id_for_match = p1.player_id;
-            player1_data_for_match = p2;
-            player2_data_for_match = p1;
           }
 
           matches.push({
             player1_id: player1_id_for_match,
             player2_id: player2_id_for_match,
-            player1_data: player1_data_for_match, // ここでフルプレイヤーデータを格納
-            player2_data: player2_data_for_match, // ここでフルプレイヤーデータを格納
             match_id: `M-${player1_id_for_match}-${player2_id_for_match}`,
             match_key: createMatchKey(player1_id_for_match, player2_id_for_match),
             status: '未開始',
@@ -332,6 +337,7 @@ export default {
       }
       generatedMatches.value = matches;
 
+      // 初期順位データの生成
       const initialStandings = {};
       props.registeredParticipants.forEach(p => {
         initialStandings[p.player_id] = {
@@ -366,14 +372,14 @@ export default {
 
       loadingSave.value = true;
       try {
-        const bracketId = crypto.randomUUID();
+        const bracketId = crypto.randomUUID(); // ユニークなブラケットIDを生成
 
         const payload = {
           bracket_id: bracketId,
           tournament_id: props.tournamentId,
           category_id: props.categoryId,
           league_data: leagueParticipantsOrder.value ? JSON.stringify(leagueParticipantsOrder.value) : null,
-          match_results_data: generatedMatches.value ? JSON.stringify(generatedMatches.value) : null, // generatedMatchesには既にplayer_dataが含まれる
+          match_results_data: generatedMatches.value ? JSON.stringify(generatedMatches.value) : null,
           standings_data: standingsData.value ? JSON.stringify(standingsData.value) : null,
         };
 
@@ -408,14 +414,11 @@ export default {
           const loadedMatches = response.data.match_results_data ? JSON.parse(response.data.match_results_data) : [];
           
           // ロードした試合データにcourt_idとmatch_order_noが存在しない場合、nullで初期化
-          // また、player_dataが正しくパースされていることを確認
           loadedMatches.forEach(match => {
             if (!('court_id' in match)) match.court_id = null;
             if (!('match_order_no' in match)) match.match_order_no = null;
+            // match_keyが存在しない場合のために生成
             match.match_key = createMatchKey(match.player1_id, match.player2_id);
-            // player_dataが文字列として保存されている場合のためにパース（通常はJSON.parseで自動処理されるはず）
-            // if (typeof match.player1_data === 'string') match.player1_data = JSON.parse(match.player1_data);
-            // if (typeof match.player2_data === 'string') match.player2_data = JSON.parse(match.player2_data);
           });
           generatedMatches.value = loadedMatches;
 
@@ -423,6 +426,7 @@ export default {
 
           showSnackbar('リーグ戦データを読み込みました！', 'success');
         } else {
+          // 404エラーの場合、データがないことを示す
           if (response.status === 404) {
             leagueParticipantsOrder.value = [];
             generatedMatches.value = [];
@@ -453,7 +457,9 @@ export default {
         if (type === 'court') {
           match.court_id = value;
         } else if (type === 'order') {
+          // 入力値が空の場合はnull、それ以外は数値に変換
           match.match_order_no = value === '' ? null : parseInt(value, 10);
+          // NaNになった場合もnullにする
           if (isNaN(match.match_order_no)) {
             match.match_order_no = null;
           }
@@ -495,21 +501,24 @@ export default {
       leagueParticipantsOrder.value = newOrder;
       draggedIndex.value = null;
       showSnackbar('選手の順序を入れ替えました！', 'success');
+      // leagueParticipantsOrderが変更されたことでdisplayedMatchesが自動的に再計算される
     };
 
     const isDragOverTargetRow = (rowIndex) => {
       return dropTargetIndex.value === rowIndex;
     };
 
+    // tournamentId または categoryId が変更されたら、自動的にデータをロード
     watch([() => props.tournamentId, () => props.categoryId], ([newTournamentId, newCategoryId]) => {
       if (newTournamentId && newCategoryId) {
         loadLeagueMatches();
       } else {
+        // IDがクリアされた場合は、表示データもクリア
         leagueParticipantsOrder.value = [];
         generatedMatches.value = [];
         standingsData.value = {};
       }
-    }, { immediate: true });
+    }, { immediate: true }); // コンポーネント初期化時にも一度実行
 
     return {
       leagueParticipantsOrder,
@@ -533,7 +542,7 @@ export default {
       updateMatchSchedule,
       getMatch,
       displayedMatches,
-      getPlayerIdForSort,
+      getPlayerIdForSort, // ESLintエラー解消のため、戻り値に追加
     };
   },
 };
@@ -552,16 +561,17 @@ export default {
 .league-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 400px;
+  min-width: 400px; /* 最小幅を維持 */
 }
 
 .header-cell, .player-name-cell, .match-cell {
   border: 1px solid #cfd8dc;
-  padding: 2px;
+  padding: 2px; /* パディングをさらに小さく */
   text-align: center;
   font-weight: bold;
   color: #424242;
   white-space: nowrap;
+  /* font-size: 0.7em; */ /* この共通指定を上書きするため、player-name-cellで個別に指定します */
 }
 
 .header-cell {
@@ -574,16 +584,16 @@ export default {
 .player-name-cell {
   background-color: #e3f2fd;
   text-align: left;
-  min-width: 70px;
-  height: 50px;
+  min-width: 70px; /* 選手名セルの最小幅を調整 (狭く) */
+  height: 50px; /* 高さを調整 */
   position: sticky;
   left: 0;
   z-index: 1;
-  display: flex;
+  display: flex; /* Flexboxで内容を中央揃え */
   align-items: center;
-  justify-content: flex-start;
-  padding-left: 8px;
-  font-size: 1.0em;
+  justify-content: flex-start; /* 左寄せ */
+  padding-left: 8px; /* 左パディングを少し増やす */
+  font-size: 1.0em; /* ★選手名のフォントサイズを大きくしました */
 }
 
 .header-cell.fixed-cell {
@@ -593,11 +603,11 @@ export default {
 
 .match-cell {
   background-color: #ffffff;
-  height: 50px;
-  width: 80px;
+  height: 50px; /* セルの高さを調整して入力欄を収める (高く) */
+  width: 80px; /* セルの幅を調整 (広く) */
   position: relative;
-  vertical-align: middle;
-  text-align: center;
+  vertical-align: middle; /* セル内のコンテンツを垂直方向中央揃え */
+  text-align: center; /* セル内のコンテンツを水平方向中央揃え */
 }
 
 .diagonal-cell {
@@ -630,22 +640,23 @@ export default {
   border-bottom: 2px dashed #3f51b5;
 }
 
+/* 試合スケジュール入力欄のスタイル (テーブルセル内用) */
 .match-cell-inputs {
   display: flex;
-  flex-direction: row;
-  gap: 2px;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
+  flex-direction: row; /* これが横並びの指示 */
+  gap: 2px; /* 入力フィールド間の隙間を調整 */
+  align-items: center; /* 垂直方向中央揃え */
+  justify-content: center; /* 水平方向中央揃え */
+  width: 100%; /* セル幅に合わせる */
+  height: 100%; /* セル高さに合わせる */
 }
 
 .custom-input {
-  max-width: 42px;
+  max-width: 42px; /* セル内に収まるように幅を調整 (さらに広く) */
   min-width: 20px;
-  height: 24px;
-  font-size: 0.8em;
-  padding: 0 3px;
+  height: 24px; /* 高さを調整 (さらに高く) */
+  font-size: 0.8em; /* フォントサイズを調整 (大きく) */
+  padding: 0 3px; /* パディングを調整 */
   border: 1px solid #ccc;
   border-radius: 3px;
   box-sizing: border-box;
@@ -662,11 +673,11 @@ export default {
 }
 
 .court-select {
-  padding-right: 12px;
+  padding-right: 12px; /* ドロップダウンアイコンのスペースを確保 */
   background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-6.5%200-12.3%203.2-15.6%208.1-3.3%204.9-3.3%2011.2%200%2016.1l132%20126.7c3.3%203.2%208.3%203.2%2011.6%200l132-126.7c3.3-4.9%203.3-11.2%200-16.1z%22%2F%3E%3C%2Fsvg%3E');
   background-repeat: no-repeat;
-  background-position: right 2px center;
-  background-size: 9px;
+  background-position: right 2px center; /* アイコンの位置 */
+  background-size: 9px; /* アイコンのサイズ (さらに大きく) */
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
@@ -680,9 +691,10 @@ export default {
 
 .custom-input::placeholder {
   color: #999;
-  font-size: 0.8em;
+  font-size: 0.8em; /* プレースホルダーのフォントサイズも調整 (大きく) */
 }
 
+/* 追加した試合リストのスタイル */
 .match-list-container {
   margin-top: 15px;
   padding: 10px;
@@ -704,12 +716,12 @@ export default {
 }
 
 .blue-player {
-  color: #1976d2;
+  color: #1976d2; /* 青色 */
   font-weight: bold;
 }
 
 .white-player {
-  color: #424242;
+  color: #424242; /* 白側は通常の文字色 */
   font-weight: bold;
 }
 
@@ -724,3 +736,4 @@ export default {
   color: #616161;
 }
 </style>
+

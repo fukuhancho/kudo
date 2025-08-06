@@ -14,7 +14,7 @@ import TournamentCategoryView from '../views/TournamentCategoryView.vue';
 import TournamentParticipantView from '../views/TournamentParticipantView.vue';
 import MatchSchedulerView from '../views/MatchSchedulerView.vue'; 
 import MatchOrderCheckView from '../views/MatchOrderCheckView.vue';
-
+import MatchRecords from '../views/MatchRecords.vue';
 
 const routes = [
   {
@@ -72,6 +72,11 @@ const routes = [
     path: '/match-order-check',
     name: 'match-order-check',
     component: MatchOrderCheckView,
+  },
+  {
+    path: '/match-records',
+    name: 'MatchRecords',
+    component: MatchRecords
   },
   
 ];

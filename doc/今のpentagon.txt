@@ -119,8 +119,8 @@
           </template>
           <template v-slot:[`item.court_id`]="{ item }">
             <select
-              :value="item.court_id"
-              @change="updateMatchSchedule(item.matchId, 'court', $event.target.value)"
+              v-model="item.court_id"
+              @change="updateMatchSchedule(item, 'court', $event.target.value)"
               class="custom-input court-select"
             >
               <option value="" disabled selected>コート</option>
@@ -132,8 +132,8 @@
           <template v-slot:[`item.match_order_no`]="{ item }">
             <input
               type="number"
-              :value="item.match_order_no"
-              @input="updateMatchSchedule(item.matchId, 'order', $event.target.value)"
+              v-model.number="item.match_order_no"
+              @input="updateMatchSchedule(item, 'order', $event.target.value)"
               min="1"
               placeholder="No."
               class="custom-input match-order-input"
@@ -175,8 +175,8 @@
             </template>
             <template v-slot:[`item.court_id`]="{ item }">
               <select
-                :value="item.court_id"
-                @change="updateMatchSchedule(item.matchId, 'court', $event.target.value)"
+                v-model="item.court_id"
+                @change="updateMatchSchedule(item, 'court', $event.target.value)"
                 class="custom-input court-select"
               >
                 <option value="" disabled selected>コート</option>
@@ -188,8 +188,8 @@
             <template v-slot:[`item.match_order_no`]="{ item }">
               <input
                 type="number"
-                :value="item.match_order_no"
-                @input="updateMatchSchedule(item.matchId, 'order', $event.target.value)"
+                v-model.number="item.match_order_no"
+                @input="updateMatchSchedule(item, 'order', $event.target.value)"
                 min="1"
                 placeholder="No."
                 class="custom-input match-order-input"
@@ -505,11 +505,11 @@ export default {
     };
 
     const addAdditionalMatch = () => {
-        // console.warn("addAdditionalMatch is called, but this functionality is currently disabled in UI.");
+        console.warn("addAdditionalMatch is called, but this functionality is currently disabled in UI.");
     };
 
     const removeAdditionalMatch = () => {
-        // console.warn("removeAdditionalMatch is called, but this functionality is currently disabled in UI.");
+        console.warn("removeAdditionalMatch is called, but this functionality is currently disabled in UI.");
     };
 
     const savePentagonMatches = async () => {
@@ -524,6 +524,7 @@ export default {
 
       loadingSave.value = true;
       try {
+        console.log('Saving initial_matches:', initialMatches.value); // ★追加ログ
         const response = await axios.post('http://localhost:1880/save-pentagon-bracket', {
           tournament_id: props.tournamentId,
           category_id: props.categoryId,
@@ -555,11 +556,11 @@ export default {
       loadingLoad.value = true;
       try {
         const response = await axios.get(`http://localhost:1880/load-pentagon-bracket/${props.tournamentId}/${props.categoryId}`);
+        console.log('Loaded response data from backend:', response.data); // ★追加ログ
 
         if (response.data.success) {
           pentagonParticipantsOrder.value = response.data.pentagon_participants_order || [];
           
-          // JSON.parse() を削除 - Node-REDが既にオブジェクトとして返していると仮定
           initialMatches.value = response.data.initial_matches || [];
           additionalMatches.value = response.data.additional_matches || [];
 
@@ -574,8 +575,8 @@ export default {
             if (!('match_order_no' in match)) match.match_order_no = null;
             if (!('score' in match)) match.score = '';
           });
+          console.log('initialMatches.value after processing in load:', initialMatches.value); // ★追加ログ
 
-          // JSON.parse() を削除 - Node-REDが既にオブジェクトとして返していると仮定
           standingsData.value = response.data.standings_data || {};
 
           showSnackbar('五角形戦データを読み込みました！', 'success');
@@ -588,7 +589,6 @@ export default {
         }
       } catch (error) {
         console.error('Failed to load pentagon matches:', error);
-        // エラーレスポンスが404の場合のみ、データがないことを示すスナックバーを表示
         if (error.response && error.response.status === 404) {
              pentagonParticipantsOrder.value = [];
              initialMatches.value = [];
@@ -596,7 +596,6 @@ export default {
              standingsData.value = {};
              showSnackbar(error.response.data.message || '指定された五角形戦の組み合わせは見つかりませんでした。', 'info');
         } else {
-            // その他のエラーの場合は、一般的な接続エラーメッセージを表示
             showSnackbar('読み込み中にエラーが発生しました。サーバーとの接続を確認してください。', 'error');
         }
       } finally {
@@ -604,27 +603,21 @@ export default {
       }
     };
 
-    const updateMatchSchedule = (matchId, type, value) => {
-      let targetMatch = initialMatches.value.find(m => m.matchId === matchId);
-
-      if (!targetMatch) {
-        targetMatch = additionalMatches.value.find(m => m.matchId === matchId);
-      }
-
-      if (targetMatch) {
+    const updateMatchSchedule = (match, type, value) => {
+      if (match) {
         if (type === 'court') {
-          targetMatch.court_id = value;
+          match.court_id = value;
         } else if (type === 'order') {
-          targetMatch.match_order_no = value === '' ? null : parseInt(value, 10);
-          if (isNaN(targetMatch.match_order_no)) {
-            targetMatch.match_order_no = null;
+          match.match_order_no = value === '' ? null : parseInt(value, 10);
+          if (isNaN(match.match_order_no)) {
+            match.match_order_no = null;
           }
         }
       }
     };
 
     onMounted(() => {
-      // console.log('PentagonMatchView mounted. registeredParticipants prop:', props.registeredParticipants);
+      console.log('PentagonMatchView mounted. registeredParticipants prop:', props.registeredParticipants);
     });
 
     watch([() => props.tournamentId, () => props.categoryId], ([newTournamentId, newCategoryId]) => {
@@ -817,3 +810,4 @@ export default {
   font-size: 0.8em;
 }
 </style>
+

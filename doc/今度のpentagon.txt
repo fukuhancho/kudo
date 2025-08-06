@@ -559,9 +559,8 @@ export default {
         if (response.data.success) {
           pentagonParticipantsOrder.value = response.data.pentagon_participants_order || [];
           
-          // JSON.parse() を削除 - Node-REDが既にオブジェクトとして返していると仮定
-          initialMatches.value = response.data.initial_matches || [];
-          additionalMatches.value = response.data.additional_matches || [];
+          initialMatches.value = response.data.initial_matches ? JSON.parse(response.data.initial_matches) : [];
+          additionalMatches.value = response.data.additional_matches ? JSON.parse(response.data.additional_matches) : [];
 
           // ロードした試合データにデフォルト値が存在しない場合、nullで初期化
           initialMatches.value.forEach(match => {
@@ -575,8 +574,7 @@ export default {
             if (!('score' in match)) match.score = '';
           });
 
-          // JSON.parse() を削除 - Node-REDが既にオブジェクトとして返していると仮定
-          standingsData.value = response.data.standings_data || {};
+          standingsData.value = response.data.standings_data ? JSON.parse(response.data.standings_data) : {};
 
           showSnackbar('五角形戦データを読み込みました！', 'success');
         } else {
@@ -588,7 +586,6 @@ export default {
         }
       } catch (error) {
         console.error('Failed to load pentagon matches:', error);
-        // エラーレスポンスが404の場合のみ、データがないことを示すスナックバーを表示
         if (error.response && error.response.status === 404) {
              pentagonParticipantsOrder.value = [];
              initialMatches.value = [];
@@ -596,7 +593,6 @@ export default {
              standingsData.value = {};
              showSnackbar(error.response.data.message || '指定された五角形戦の組み合わせは見つかりませんでした。', 'info');
         } else {
-            // その他のエラーの場合は、一般的な接続エラーメッセージを表示
             showSnackbar('読み込み中にエラーが発生しました。サーバーとの接続を確認してください。', 'error');
         }
       } finally {
@@ -817,3 +813,4 @@ export default {
   font-size: 0.8em;
 }
 </style>
+
